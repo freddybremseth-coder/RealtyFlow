@@ -1,0 +1,10 @@
+{
+  "name": "RealtyFlow AI",
+  "description": "Intelligent sales assistant for Zen Eco Homes. Built for Freddy Bremseth.",
+  "repository": "https://github.com/freddybremseth-coder/RealtyFlowAI",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
