@@ -1,66 +1,92 @@
-
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RealtyFlow AI | Zen Eco Homes</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RealtyFlow AI | Strategic Advisor</title>
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Space+Mono:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #06b6d4;
-            --accent: #d946ef;
-            --background: #09090b;
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'cyan-neon': '#06b6d4',
+              'brand-bg': '#09090b',
+            }
+          }
         }
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--background);
-            color: #f8fafc;
-            margin: 0;
-            overflow-x: hidden;
+      }
+    </script>
+    
+    <script>
+      // Global error handler for Vercel debugging
+      window.onerror = function(msg, url, line, col, error) {
+        console.error("Critical Error:", msg, "at", url, ":", line);
+        const root = document.getElementById('root');
+        if (root && root.innerHTML === "") {
+          root.innerHTML = '<div style="padding: 40px; color: white; background: #111; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">' +
+            '<h1 style="color: #ef4444;">System krasj ved lasting</h1>' +
+            '<p style="color: #666; max-width: 500px;">Dette skyldes vanligvis en feil i import-mappet eller en nettverksfeil mot CDN.</p>' +
+            '<pre style="background: #222; padding: 20px; border-radius: 8px; font-size: 12px; text-align: left; overflow: auto; max-width: 90vw;">' + msg + '</pre>' +
+            '<button onclick="location.reload()" style="margin-top: 20px; padding: 12px 24px; background: #06b6d4; color: black; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;">Last inn på nytt</button>' +
+            '</div>';
         }
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Space Mono', monospace;
-        }
-        .neon-border {
-            box-shadow: 0 0 5px var(--primary), 0 0 10px var(--primary);
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #09090b;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 4px;
-        }
-    </style>
-<script type="importmap">
+      };
+      
+      window.process = { env: { API_KEY: "" } };
+    </script>
+
+    <script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.36.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "react-markdown": "https://esm.sh/react-markdown@^9.0.0",
-    "remark-gfm": "https://esm.sh/remark-gfm@^4.0.0"
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "@google/genai": "https://esm.sh/@google/genai@0.2.1",
+    "lucide-react": "https://esm.sh/lucide-react@0.378.0?external=react",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.23.1?external=react,react-dom",
+    "recharts": "https://esm.sh/recharts@2.12.7?external=react,react-dom",
+    "react-markdown": "https://esm.sh/react-markdown@9.0.1?external=react,react-dom",
+    "remark-gfm": "https://esm.sh/remark-gfm@4.0.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
   }
 }
 </script>
+
+    <style>
+      :root {
+        --background: #09090b;
+        --primary: #06b6d4;
+      }
+      body {
+        background-color: var(--background);
+        color: #f8fafc;
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+      }
+      h1, h2, h3, h4 { font-family: 'Space Mono', monospace; }
+      .neon-text { text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+      .glass {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
 </head>
 <body>
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>
