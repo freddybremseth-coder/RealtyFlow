@@ -12,6 +12,7 @@ import GrowthHub from './pages/GrowthHub';
 import Settings from './pages/Settings';
 import Inventory from './pages/Inventory';
 import Login from './pages/Login';
+import { LeadScanner } from './components/LeadScanner';
 import { authStore } from './services/authService';
 
 const App: React.FC = () => {
@@ -44,6 +45,15 @@ const App: React.FC = () => {
                 <Route path="/studio" element={<ImageStudio />} />
                 <Route path="/content" element={<ContentCMS />} />
                 <Route path="/assistant" element={<div className="w-full py-4 lg:py-8"><LiveAssistant /></div>} />
+                <Route path="/scanner" element={
+                  <div className="w-full p-6 lg:p-10 flex flex-col items-center justify-center min-h-[60vh] gap-6">
+                    <div className="text-center mb-4">
+                      <h2 className="text-2xl font-bold text-slate-100 mb-2">Lead Scanner</h2>
+                      <p className="text-slate-400 text-sm">Ta bilde av et leadskjema eller visittkort for å lagre det automatisk.</p>
+                    </div>
+                    <LeadScanner />
+                  </div>
+                } />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
