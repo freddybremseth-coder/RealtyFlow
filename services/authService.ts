@@ -1,5 +1,5 @@
 
-import { networkDelay } from "./supabase";
+import { supabase } from "./supabase";
 
 const AUTH_KEY = 'rf_auth_session';
 
@@ -21,23 +21,21 @@ class AuthService {
   }
 
   async login(email: string, pass: string): Promise<boolean> {
-    await networkDelay(); // Simulerer nettverkskall
-    
-    // Spesifikke krav fra bruker
-    if (email === 'freddy.bremseth@gmail.com' && pass === 'AllRealty1!') {
-      this.session = {
-        email,
-        isLoggedIn: true,
-        loginTime: Date.now()
-      };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(this.session));
-      this.notify();
-      return true;
-    }
-    return false;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error || !data.user) return false;
+
+    this.session = {
+      email: data.user.email ?? email,
+      isLoggedIn: true,
+      loginTime: Date.now()
+    };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(this.session));
+    this.notify();
+    return true;
   }
 
-  logout() {
+  async logout() {
+    await supabase.auth.signOut();
     this.session = null;
     localStorage.removeItem(AUTH_KEY);
     this.notify();
@@ -52,9 +50,9 @@ class AuthService {
   }
 
   async resetPassword(email: string): Promise<void> {
-    await networkDelay();
-    console.log(`Reset link sent to ${email}`);
-    // Her ville du koblet til Supabase: await supabase.auth.resetPasswordForEmail(email)
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/#/reset-password`
+    });
   }
 
   subscribe(listener: () => void) {
