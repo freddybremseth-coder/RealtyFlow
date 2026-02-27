@@ -1,7 +1,8 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { LeadStatus, Lead, Property, MarketTheme, Brand, AdvisorProfile, EmailMessage, BrandVisualStyles, AppLanguage } from "../types";
+import { LeadStatus, Lead, Property, MarketTheme, Brand, AdvisorProfile, EmailMessage, BrandVisualStyles, AppLanguage, PropertyValuationData, ValuationResult } from "../types";
 import { settingsStore } from "./settingsService";
+import { buildMarketDataPrompt, getAreaData, MARKET_DATA_UPDATED } from "./marketData";
 
 export class GeminiService {
   private getContext(brand?: Brand, profile?: AdvisorProfile) {
@@ -298,6 +299,145 @@ export class GeminiService {
       config: { systemInstruction: this.getContext(brand) },
     });
     return response.text || '';
+  }
+
+  async generatePropertyValuation(data: PropertyValuationData, brandId: string, profile: AdvisorProfile): Promise<ValuationResult> {
+    const ai = this.getClient();
+    const brand = settingsStore.getBrand(brandId);
+
+    const comparablesText = data.comparables.length > 0
+      ? data.comparables.map(c =>
+          `- ${c.title}: €${c.price.toLocaleString()} | ${c.area}m² | €${c.pricePerSqm}/m² | ${c.bedrooms} sov. | Kilde: ${c.source}`
+        ).join('\n')
+      : 'Ingen sammenlignbare eiendommer er lagt inn manuelt.';
+
+    // Slå opp lokal markedsdata for det aktuelle kommunenavnet
+    const localAreaData = getAreaData(data.municipality);
+    const localDataNote = localAreaData
+      ? `LOKAL MARKEDSDATA FOR ${data.municipality.toUpperCase()} (fra RealtyFlow-database, oppdatert ${MARKET_DATA_UPDATED}):
+– Prisantydning (Idealista): ${localAreaData.askingPricePerSqm.toLocaleString()} €/m²
+– Transaksjonspris (faktisk betalt): ${localAreaData.transactionPricePerSqm.toLocaleString()} €/m²
+– Prisvekst siste år: ${localAreaData.yoyChangePct != null ? `+${localAreaData.yoyChangePct}%` : 'ikke tilgjengelig'}
+– Trend: ${localAreaData.trend}
+– Snitt dager på markedet: ${localAreaData.avgDaysOnMarket ?? 'ikke tilgjengelig'}
+– Region: ${localAreaData.region}
+${localAreaData.notes ? `– Merknad: ${localAreaData.notes}` : ''}`
+      : `Kommunen "${data.municipality}" er ikke i vår lokale database. Bruk referansetabellen nedenfor og Google Search.`;
+
+    const prompt = `
+Du er en Senior Eiendomsrådgiver for Soleada.no – et norsk eiendomsmeglerfirma spesialisert på spanske eiendommer på Costa Blanca og Costa Calida.
+
+Du skal nå lage en KOMPLETT, PROFESJONELL VERDIVURDERING på norsk for følgende eiendom.
+
+═══════════════════════════════════════════
+EIENDOMSDATA
+═══════════════════════════════════════════
+Eier: ${data.ownerName || 'Eier'}
+Visningsdato: ${data.viewingDate}
+Adresse: ${data.streetAddress}, ${data.postalCode} ${data.municipality}, ${data.province}
+${data.urbanization ? `Urbanisering: ${data.urbanization}` : ''}
+
+Type: ${data.propertyType}
+Byggeår: ${data.yearBuilt || 'Ukjent'}
+${data.lastRenovated ? `Sist renovert: ${data.lastRenovated}` : ''}
+Tilstand: ${data.condition}
+Energikarakter: ${data.energyRating}
+
+Boareal: ${data.builtArea} m²
+${data.usefulArea ? `Nyttig areal: ${data.usefulArea} m²` : ''}
+${data.plotSize ? `Tomtestørrelse: ${data.plotSize} m²` : ''}
+${data.terraceSize ? `Terrasse/balkong: ${data.terraceSize} m²` : ''}
+${data.floor ? `Etasje: ${data.floor} av ${data.totalFloors || '?'}` : ''}
+
+Soverom: ${data.bedrooms} | Baderom: ${data.bathrooms}
+${data.extraRooms ? `Ekstra rom: ${data.extraRooms}` : ''}
+
+Basseng: ${data.pool}
+Garasje: ${data.garage ? `Ja (${data.parkingSpaces} plass)` : 'Nei'}
+Heis: ${data.hasLift ? 'Ja' : 'Nei'}
+Klimaanlegg: ${data.hasAirConditioning ? 'Ja' : 'Nei'}
+Solcellepaneler: ${data.hasSolarPanels ? 'Ja' : 'Nei'}
+Bodrom: ${data.hasStorageRoom ? 'Ja' : 'Nei'}
+${data.hasCommunityFees ? `Felleskostnader: €${data.communityFees}/mnd` : ''}
+${data.propertyTax ? `IBI (eiendomsskatt): €${data.propertyTax}/år` : ''}
+
+Orientering: ${data.orientation}
+Utsikt: ${data.view}
+
+EIERS ØNSKEDE PRIS: ${data.ownerAskingPrice ? `€${data.ownerAskingPrice.toLocaleString()}` : 'Ikke oppgitt'}
+
+═══════════════════════════════════════════
+MARKEDSDATA FOR OMRÅDET
+═══════════════════════════════════════════
+Rådgivers oppgitte kvm-pris for ${data.municipality}: ${data.avgPricePerSqmArea ? `€${data.avgPricePerSqmArea}/m²` : 'Ikke oppgitt – bruk lokal data og referansetabell nedenfor'}
+
+${localDataNote}
+
+Sammenlignbare eiendommer (lagt inn av rådgiver):
+${comparablesText}
+
+${buildMarketDataPrompt()}
+
+═══════════════════════════════════════════
+RÅDGIVERENS NOTATER FRA VISNING
+═══════════════════════════════════════════
+NOTATER: ${data.agentNotes || 'Ingen spesifikke notater.'}
+STYRKER: ${data.agentStrengths || 'Ikke spesifisert.'}
+SVAKHETER: ${data.agentWeaknesses || 'Ikke spesifisert.'}
+
+═══════════════════════════════════════════
+SOLEADA.NO – STANDARD INFORMASJON
+═══════════════════════════════════════════
+Meglerforetaket Soleada.no er et norskeid eiendomsmeglerfirma med base i Spania.
+Kommisjon: 3,5% av salgspris (ingen salg = ingen betaling, ingen oppstartsgebyr).
+Kontrakt: Eksklusivt salgsoppdrag på 3-6 måneder.
+Tjenester inkludert: Profesjonell fotografering, 3D-tur/video, internasjonal annonsering
+(Idealista, Fotocasa, Kyero, Rightmove, Soleada.no), sosiale medier på 6 språk,
+direkte markedsføring mot norske, tyske og britiske kjøpere, juridisk koordinering,
+NIE-assistanse, gratis kjøperveiledning, alltid tilgjengelig rådgiver.
+
+═══════════════════════════════════════════
+INSTRUKSJONER FOR RAPPORTEN
+═══════════════════════════════════════════
+Generer en KOMPLETT og PROFESJONELL verdivurdering på norsk.
+Bruk Google Search til å finne aktuelle Idealista-priser for ${data.municipality} hvis kvm-pris mangler.
+Bruk ekte talldata fra markedet. Vær analytisk og presis.
+Skriv som en seniorvurdering – profesjonell, varm og overbevisende.
+
+Return ONLY valid JSON (no markdown fences) with these exact fields:
+{
+  "estimatedLow": number (EUR),
+  "estimatedMid": number (EUR),
+  "estimatedHigh": number (EUR),
+  "recommendedListingPrice": number (EUR),
+  "pricePerSqm": number (EUR/m²),
+  "marketPositioning": "string (1-2 sentences on how to position in market)",
+  "thankYouLetter": "string (warm personal letter to owner in Norwegian, 150-200 words, from ${profile.name} at Soleada.no, referencing visit date and specific property)",
+  "propertyDescription": "string (rich professional property description in Norwegian, 200-300 words, highlighting best features from agent notes)",
+  "marketAnalysis": "string (market analysis for the area in Norwegian, 200-300 words, with specific price data, trends, comparable data)",
+  "salesStrategy": "string (specific sales strategy for THIS property in Norwegian, 200-300 words, who the target buyer is, which channels, timing)",
+  "fullReportMarkdown": "string (complete formatted markdown report in Norwegian with ALL sections: ## 1. Takk for visningen, ## 2. Om eiendommen, ## 3. Markedsanalyse, ## 4. Verdivurdering, ## 5. Vår salgsstrategi, ## 6. Om Soleada.no, ## 7. Kommisjon og tilbud, ## 8. Neste steg)"
+}
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        systemInstruction: this.getContext(brand, profile),
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    const raw = this.cleanJson(response.text || '{}');
+    try {
+      return JSON.parse(raw) as ValuationResult;
+    } catch {
+      // Fallback: extract JSON block manually
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) return JSON.parse(match[0]) as ValuationResult;
+      throw new Error('Kunne ikke tolke AI-responsen. Prøv igjen.');
+    }
   }
 }
 

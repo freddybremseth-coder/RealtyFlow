@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, Users, Map, Image as ImageIcon, FileText, Settings, Mic, Building2, Rocket, Share2, Home, Camera } from 'lucide-react';
+import { LayoutDashboard, Users, Map, Image as ImageIcon, FileText, Settings, Mic, Building2, Rocket, Share2, Home, Camera, ClipboardList } from 'lucide-react';
 
 export const COLORS = {
   primary: '#06b6d4',
@@ -23,6 +23,7 @@ export const NAVIGATION_ITEMS = [
   { label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
   { label: 'Pipeline', icon: <Users size={20} />, path: '/pipeline' },
   { label: 'Inventory', icon: <Home size={20} />, path: '/inventory' },
+  { label: 'Verdivurdering', icon: <ClipboardList size={20} />, path: '/valuation' },
   { label: 'Market Pulse', icon: <Map size={20} />, path: '/market' },
   { label: 'Growth Hub', icon: <Rocket size={20} />, path: '/growth' },
   { label: 'Content Studio', icon: <FileText size={20} />, path: '/content' },
