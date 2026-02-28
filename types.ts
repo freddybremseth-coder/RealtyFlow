@@ -192,3 +192,106 @@ export interface AdvisorProfile {
   signature?: string;
   expertise: string[];
 }
+
+// ─── VERDIVURDERING ───────────────────────────────────────────────────────────
+
+export type PropertyType = 'Leilighet' | 'Villa' | 'Rekkehus' | 'Finca' | 'Tomt' | 'Duplex' | 'Bungalow' | 'Annet';
+export type PropertyCondition = 'Nytt / Aldri bebodd' | 'Som nytt / Renovert' | 'Godt vedlikehold' | 'Trenger noe arbeid' | 'Trenger totalrenovering';
+export type PropertyOrientation = 'Sør' | 'Sør-Vest' | 'Sør-Øst' | 'Vest' | 'Øst' | 'Nord' | 'Nord-Vest' | 'Nord-Øst';
+export type PropertyView = 'Havutsikt' | 'Fjellutsikt' | 'Byutsikt' | 'Basseng/hage' | 'Indre gård' | 'Ingen spesiell';
+export type EnergyRating = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'Ukjent';
+export type PoolType = 'Privat' | 'Fellesareal' | 'Ingen';
+
+export interface ComparableProperty {
+  title: string;
+  price: number;
+  area: number;
+  pricePerSqm: number;
+  bedrooms: number;
+  location?: string;
+  url?: string;
+  source: 'Idealista' | 'CasaSafari' | 'Manuell';
+}
+
+export interface PropertyValuationData {
+  // Eiendom
+  ownerName: string;
+  ownerPhone: string;
+  ownerEmail: string;
+  viewingDate: string;
+
+  // Adresse
+  streetAddress: string;
+  postalCode: string;
+  municipality: string;
+  province: string;
+  urbanization?: string;
+
+  // Type og tilstand
+  propertyType: PropertyType;
+  condition: PropertyCondition;
+  yearBuilt: string;
+  lastRenovated?: string;
+  energyRating: EnergyRating;
+
+  // Størrelser
+  builtArea: number;
+  usefulArea?: number;
+  plotSize?: number;
+  terraceSize?: number;
+  floor?: string;
+  totalFloors?: string;
+
+  // Rom
+  bedrooms: number;
+  bathrooms: number;
+  extraRooms?: string;
+
+  // Fasiliteter
+  pool: PoolType;
+  garage: boolean;
+  parkingSpaces: number;
+  hasLift: boolean;
+  hasAirConditioning: boolean;
+  hasSolarPanels: boolean;
+  hasStorageRoom: boolean;
+  hasCommunityFees: boolean;
+  communityFees?: number;
+  propertyTax?: number;
+
+  // Orientering og utsikt
+  orientation: PropertyOrientation;
+  view: PropertyView;
+
+  // Markedsdata
+  ownerAskingPrice?: number;
+  avgPricePerSqmArea?: number;
+  comparables: ComparableProperty[];
+
+  // Rådgivernotater
+  agentNotes: string;
+  agentStrengths: string;
+  agentWeaknesses: string;
+}
+
+export interface ValuationResult {
+  estimatedLow: number;
+  estimatedMid: number;
+  estimatedHigh: number;
+  recommendedListingPrice: number;
+  pricePerSqm: number;
+  marketPositioning: string;
+  fullReportMarkdown: string;
+  propertyDescription: string;
+  marketAnalysis: string;
+  salesStrategy: string;
+  thankYouLetter: string;
+}
+
+export interface SavedValuation {
+  id: string;
+  createdAt: string;
+  brandId: string;
+  propertyData: PropertyValuationData;
+  result: ValuationResult;
+}
