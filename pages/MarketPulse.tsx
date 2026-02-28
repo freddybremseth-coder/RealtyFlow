@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { gemini } from '../services/geminiService';
+import { gemini } from '../services/claudeService';
 import { marketStore } from '../services/marketService';
 import { settingsStore } from '../services/settingsService';
 import { 
@@ -145,7 +145,7 @@ const MarketPulse: React.FC = () => {
   const brandPrimary = activeBrand?.visualStyles?.primaryColor || '#06b6d4';
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-24">
+    <div className="space-y-4 sm:space-y-8 animate-in slide-in-from-right-4 duration-500 pb-24">
       {isLoading && (
         <div className="fixed top-0 left-0 right-0 h-1.5 z-[500] bg-slate-900 overflow-hidden">
           <div className="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-cyan-500 w-1/3 animate-progress"></div>
@@ -154,8 +154,8 @@ const MarketPulse: React.FC = () => {
 
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-4xl font-bold neon-text text-cyan-400 mb-2">Mediterranean Intel</h1>
-          <p className="text-slate-400">Strategisk innsikt og brand-spesifikke rapporter for Costa Blanca.</p>
+          <h1 className="text-2xl sm:text-4xl font-bold neon-text text-cyan-400 mb-2">Mediterranean Intel</h1>
+          <p className="text-sm text-slate-400">Strategisk innsikt og brand-spesifikke rapporter for Costa Blanca.</p>
         </div>
         <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-slate-800">
            <div className="flex bg-slate-950/50 p-1 rounded-xl mr-2">
@@ -184,7 +184,7 @@ const MarketPulse: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
-          <div className="glass p-8 rounded-[3rem] border border-slate-800 shadow-2xl bg-gradient-to-br from-slate-900/50 to-transparent">
+          <div className="glass p-4 sm:p-8 rounded-2xl sm:rounded-[3rem] border border-slate-800 shadow-2xl bg-gradient-to-br from-slate-900/50 to-transparent">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
                 <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-cyan-500" size={20} />
@@ -200,7 +200,7 @@ const MarketPulse: React.FC = () => {
                 type="button"
                 onClick={() => handleSearch(MarketTheme.GENERAL)}
                 disabled={isLoading}
-                className="px-10 py-5 bg-cyan-500 text-slate-950 rounded-[1.5rem] font-bold flex items-center justify-center gap-2 hover:bg-cyan-400 transition-all shadow-xl shadow-cyan-500/20 active:scale-95"
+                className="px-4 sm:px-10 py-3 sm:py-5 bg-cyan-500 text-slate-950 rounded-2xl sm:rounded-[1.5rem] font-bold flex items-center justify-center gap-2 hover:bg-cyan-400 transition-all shadow-xl shadow-cyan-500/20 active:scale-95 whitespace-nowrap"
               >
                 {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Search size={20} />}
                 Generer Analyse
@@ -230,54 +230,55 @@ const MarketPulse: React.FC = () => {
           </div>
 
           {analysis && (
-            <div className="glass p-10 lg:p-20 rounded-[4rem] border border-slate-800 relative overflow-hidden bg-white/[0.01]">
+            <div className="glass p-4 sm:p-10 lg:p-20 rounded-2xl sm:rounded-[4rem] border border-slate-800 relative overflow-hidden bg-white/[0.01]">
                {/* pointer-events-none added to decorative blur div to prevent blocking button clicks */}
                <div className="absolute top-0 right-0 w-[500px] h-[500px] blur-[150px] -mr-64 -mt-64 pointer-events-none" style={{ backgroundColor: `${brandPrimary}15` }}></div>
                
-               <div className="flex justify-between items-center mb-20 pb-10 border-b border-slate-800/50">
-                  <div className="flex items-center gap-8">
-                     <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-slate-800 p-4 flex items-center justify-center shadow-2xl">
-                        {activeBrand?.logo ? <img src={activeBrand.logo} className="w-full h-full object-contain" /> : <BarChart3 size={40} className="text-cyan-400" />}
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-20 pb-4 sm:pb-10 border-b border-slate-800/50">
+                  <div className="flex items-center gap-4 sm:gap-8">
+                     <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-3xl bg-slate-900 border border-slate-800 p-2 sm:p-4 flex items-center justify-center shadow-2xl flex-shrink-0">
+                        {activeBrand?.logo ? <img src={activeBrand.logo} className="w-full h-full object-contain" /> : <BarChart3 size={24} className="text-cyan-400 sm:hidden" />}
+                        {!activeBrand?.logo && <BarChart3 size={40} className="text-cyan-400 hidden sm:block" />}
                      </div>
                      <div>
-                        <h2 className="text-4xl font-bold text-white uppercase tracking-tighter leading-none mb-3">
+                        <h2 className="text-lg sm:text-4xl font-bold text-white uppercase tracking-tighter leading-none mb-1 sm:mb-3">
                           {activeResearchTopic ? `Rapport: ${activeResearchTopic.toUpperCase()}` : 'Markedsanalyse'}
                         </h2>
-                        <div className="flex items-center gap-4 text-sm font-mono tracking-widest text-slate-500">
-                           <span className="flex items-center gap-2 uppercase tracking-[0.2em]"><MapPin size={14} className="text-cyan-500" /> {location.toUpperCase()}</span>
-                           <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                           <span className="flex items-center gap-2 uppercase tracking-[0.2em]">{activeBrand?.name || 'Zen Eco Homes'}</span>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-sm font-mono tracking-widest text-slate-500">
+                           <span className="flex items-center gap-1 sm:gap-2 uppercase tracking-[0.2em]"><MapPin size={12} className="text-cyan-500" /> {location.toUpperCase()}</span>
+                           <span className="hidden sm:inline w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+                           <span className="flex items-center gap-1 sm:gap-2 uppercase tracking-[0.2em]">{activeBrand?.name || 'Zen Eco Homes'}</span>
                         </div>
                      </div>
                   </div>
-                  <button 
+                  <button
                     type="button"
-                    onClick={() => openSaveDialog()} 
-                    className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-slate-300 rounded-2xl border border-slate-800 text-xs font-bold uppercase hover:bg-slate-800 transition-all shadow-xl active:scale-95 z-20"
+                    onClick={() => openSaveDialog()}
+                    className="flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-2 sm:py-4 bg-slate-900 text-slate-300 rounded-xl sm:rounded-2xl border border-slate-800 text-xs font-bold uppercase hover:bg-slate-800 transition-all shadow-xl active:scale-95 z-20 flex-shrink-0"
                   >
-                     <Save size={20} /> Lagre Analyse
+                     <Save size={16} /> Lagre
                   </button>
                </div>
 
-               <div className="prose prose-invert max-w-none 
-                prose-h1:text-6xl prose-h1:text-cyan-400 prose-h1:mb-24 prose-h1:text-center prose-h1:font-bold prose-h1:tracking-tighter prose-h1:leading-tight
-                prose-h2:text-4xl prose-h2:text-white prose-h2:border-l-[12px] prose-h2:border-cyan-500 prose-h2:pl-10 prose-h2:mt-40 prose-h2:mb-16 prose-h2:font-bold prose-h2:uppercase prose-h2:tracking-tight
-                prose-h3:text-2xl prose-h3:text-slate-100 prose-h3:mt-24 prose-h3:mb-10 prose-h3:font-bold
-                prose-table:w-full prose-table:my-20 prose-table:border-collapse prose-table:rounded-[2.5rem] prose-table:overflow-hidden prose-table:shadow-2xl
-                prose-th:bg-slate-900 prose-th:text-cyan-400 prose-th:p-8 prose-th:text-left prose-th:border prose-th:border-slate-800 prose-th:uppercase prose-th:text-xs prose-th:tracking-[0.3em]
-                prose-td:p-8 prose-td:border prose-td:border-slate-800 prose-td:text-slate-300 prose-td:text-lg prose-td:bg-slate-950/20
-                prose-p:text-slate-300 prose-p:leading-[2.2] prose-p:text-2xl prose-p:mb-14 prose-p:font-light
-                prose-blockquote:border-l-[10px] prose-blockquote:border-indigo-500 prose-blockquote:bg-indigo-500/5 prose-blockquote:rounded-[3rem] prose-blockquote:p-14 prose-blockquote:text-indigo-100 prose-blockquote:not-italic prose-blockquote:my-24 prose-blockquote:text-2xl prose-blockquote:shadow-inner
-                prose-pre:bg-slate-950 prose-pre:border prose-pre:border-slate-800 prose-pre:rounded-[2.5rem] prose-pre:p-12 prose-pre:shadow-3xl prose-pre:my-20
-                prose-code:text-cyan-400 prose-code:font-mono prose-code:text-lg
-                prose-hr:border-slate-800 prose-hr:my-32 prose-hr:border-t-2
-                prose-li:text-slate-300 prose-li:text-xl prose-li:mb-6">
+               <div className="prose prose-invert max-w-none
+                prose-h1:text-2xl sm:prose-h1:text-4xl prose-h1:text-cyan-400 prose-h1:mb-6 sm:prose-h1:mb-12 prose-h1:text-center prose-h1:font-bold prose-h1:tracking-tighter prose-h1:leading-tight
+                prose-h2:text-xl sm:prose-h2:text-2xl prose-h2:text-white prose-h2:border-l-4 prose-h2:border-cyan-500 prose-h2:pl-4 prose-h2:mt-8 prose-h2:mb-4 prose-h2:font-bold prose-h2:uppercase prose-h2:tracking-tight
+                prose-h3:text-lg prose-h3:text-slate-100 prose-h3:mt-6 prose-h3:mb-3 prose-h3:font-bold
+                prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:overflow-hidden prose-table:shadow-lg
+                prose-th:bg-slate-900 prose-th:text-cyan-400 prose-th:p-3 prose-th:text-left prose-th:border prose-th:border-slate-800 prose-th:uppercase prose-th:text-xs prose-th:tracking-wider
+                prose-td:p-3 prose-td:border prose-td:border-slate-800 prose-td:text-slate-300 prose-td:text-sm prose-td:bg-slate-950/20
+                prose-p:text-slate-300 prose-p:leading-relaxed prose-p:text-base prose-p:mb-4
+                prose-blockquote:border-l-4 prose-blockquote:border-indigo-500 prose-blockquote:bg-indigo-500/5 prose-blockquote:rounded-xl prose-blockquote:p-4 prose-blockquote:text-indigo-100 prose-blockquote:not-italic prose-blockquote:my-6 prose-blockquote:text-base prose-blockquote:shadow-inner
+                prose-pre:bg-slate-950 prose-pre:border prose-pre:border-slate-800 prose-pre:rounded-xl prose-pre:p-4 prose-pre:shadow-lg prose-pre:my-4 prose-pre:overflow-x-auto
+                prose-code:text-cyan-400 prose-code:font-mono prose-code:text-sm
+                prose-hr:border-slate-800 prose-hr:my-8 prose-hr:border-t-2
+                prose-li:text-slate-300 prose-li:text-base prose-li:mb-2">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {analysis.text}
                   </ReactMarkdown>
                </div>
 
-               <div className="mt-32 pt-16 border-t border-slate-800 flex flex-col md:flex-row justify-between items-end gap-12">
+               <div className="mt-8 sm:mt-16 pt-6 sm:pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-end gap-6 sm:gap-12">
                   <div className="space-y-6 flex-1">
                     <h3 className="text-[12px] font-mono text-slate-600 uppercase tracking-[0.5em] flex items-center gap-4">
                        <Globe size={22} className="text-cyan-500" /> Kildegrunnlag & Markedsverifisering
@@ -313,7 +314,7 @@ const MarketPulse: React.FC = () => {
         </div>
 
         <div className="lg:col-span-4 space-y-8">
-           <div className="glass p-8 rounded-[3rem] border border-slate-800 flex flex-col max-h-[600px] shadow-xl">
+           <div className="glass p-4 sm:p-8 rounded-2xl sm:rounded-[3rem] border border-slate-800 flex flex-col max-h-[400px] lg:max-h-[600px] shadow-xl">
               <h3 className="text-sm font-bold text-slate-100 mb-6 flex items-center gap-2">
                  <History size={18} className="text-indigo-400" /> Rapportarkiv
               </h3>

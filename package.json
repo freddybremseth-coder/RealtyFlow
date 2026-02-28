@@ -9,13 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "@anthropic-ai/sdk": "^0.78.0",
     "@google/genai": "^1.42.0",
     "lucide-react": "^0.475.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "9.0.1",
     "react-router-dom": "6.23.1",
     "recharts": "^3.0.0",
-    "react-markdown": "9.0.1",
     "remark-gfm": "4.0.0"
   },
   "devDependencies": {

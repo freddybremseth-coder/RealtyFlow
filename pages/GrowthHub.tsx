@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { gemini } from '../services/geminiService';
+import { gemini } from '../services/claudeService';
 import { marketStore } from '../services/marketService';
 import { propertyStore } from '../services/propertyService';
 import { settingsStore } from '../services/settingsService';
@@ -257,7 +257,7 @@ const GrowthHub: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* SIDEBAR */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="glass p-8 rounded-[3rem] border border-slate-800 space-y-8 shadow-2xl">
+          <div className="glass p-4 sm:p-8 rounded-2xl sm:rounded-[3rem] border border-slate-800 space-y-6 sm:space-y-8 shadow-2xl">
             <div>
               <label className="block text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] mb-4 ml-1">Aktivt Brand</label>
               <div className="grid grid-cols-1 gap-2">
@@ -329,15 +329,15 @@ const GrowthHub: React.FC = () => {
         <div className="lg:col-span-8 space-y-8">
            {activeTab === 'ads' && (
              <div className="space-y-8">
-                <div className="glass p-10 rounded-[3rem] border border-slate-800 bg-gradient-to-br from-slate-900/50 to-transparent shadow-2xl space-y-6">
+                <div className="glass p-4 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-slate-800 bg-gradient-to-br from-slate-900/50 to-transparent shadow-2xl space-y-4 sm:space-y-6">
                    <div className="flex justify-between items-center mb-2">
                       <h3 className="text-xl font-bold text-white flex items-center gap-3"><Sparkles className="text-cyan-400" size={24} /> Kampanjestrategi</h3>
                       <button onClick={() => setObjective(BRAND_TEMPLATES[selectedBrandId])} className="text-[10px] font-bold text-slate-500 hover:text-white flex items-center gap-2"><RefreshCw size={12} /> Reset</button>
                    </div>
-                   <textarea 
+                   <textarea
                      value={objective}
                      onChange={(e) => setObjective(e.target.value)}
-                     className="w-full bg-slate-950 border border-slate-800 rounded-[2rem] p-8 text-lg text-slate-200 min-h-[150px] outline-none focus:border-cyan-500 transition-all"
+                     className="w-full bg-slate-950 border border-slate-800 rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 text-sm sm:text-lg text-slate-200 min-h-[120px] sm:min-h-[150px] outline-none focus:border-cyan-500 transition-all"
                      placeholder="Skriv din brief her..."
                    />
                    <div className="flex justify-end">
@@ -354,7 +354,7 @@ const GrowthHub: React.FC = () => {
 
                 {adResult && (
                   <div className="animate-in slide-in-from-bottom-6 duration-700 space-y-8">
-                    <div className="glass p-12 rounded-[4rem] border border-slate-800 bg-[#0a0a0c] relative overflow-hidden shadow-3xl">
+                    <div className="glass p-4 sm:p-12 rounded-2xl sm:rounded-[4rem] border border-slate-800 bg-[#0a0a0c] relative overflow-hidden shadow-3xl">
                        <div className="flex justify-between items-center mb-12 border-b border-slate-800 pb-8">
                           <h3 className="text-2xl font-bold text-white">AI Kampanjeforslag</h3>
                           <div className="text-right"><div className="text-2xl font-bold text-emerald-400">Viral Impact {adResult.viralityScore}%</div></div>

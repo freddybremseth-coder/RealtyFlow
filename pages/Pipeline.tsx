@@ -11,7 +11,7 @@ import {
   Home, ImageIcon, Wand2, FileSearch, UserPlus, Save, Camera, Clock, Navigation, CalendarDays, User,
   CheckSquare, Square, ClipboardList, Trash2, AlertTriangle, PhoneCall, History, Play, Quote, UserCheck, TrendingUp, Filter, Download, Inbox, MessageCircle
 } from 'lucide-react';
-import { gemini } from '../services/geminiService';
+import { gemini } from '../services/claudeService';
 
 const COLUMNS = [
   { id: LeadStatus.NEW, label: 'New', color: 'bg-cyan-500' },
@@ -114,7 +114,7 @@ const Pipeline: React.FC = () => {
   return (
     <div className="space-y-6 lg:space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 px-1">
-        <div><h1 className="text-4xl font-bold neon-text text-cyan-400">Pipeline</h1><p className="text-slate-400 text-xs mt-1">Verdi: €{(totalValue / 1000000).toFixed(1)}M</p></div>
+        <div><h1 className="text-2xl sm:text-4xl font-bold neon-text text-cyan-400">Pipeline</h1><p className="text-slate-400 text-xs mt-1">Verdi: €{(totalValue / 1000000).toFixed(1)}M</p></div>
         <div className="flex gap-2">
           <button onClick={() => setIsLeadModalOpen(true)} className="px-6 py-3 bg-cyan-500 text-slate-950 rounded-2xl font-bold flex items-center gap-2 text-xs shadow-lg shadow-cyan-500/20"><UserPlus size={16} /> Ny Lead</button>
         </div>
@@ -139,8 +139,8 @@ const Pipeline: React.FC = () => {
       {selectedLead && (
         <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex justify-end animate-in slide-in-from-right duration-300">
           <div className="w-full lg:w-[700px] bg-[#0a0a0c] border-l border-slate-800 h-full flex flex-col shadow-2xl">
-             <header className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/20">
-                <div><h2 className="text-2xl font-bold text-white">{selectedLead.name}</h2><p className="text-xs text-slate-500">{selectedLead.email}</p></div>
+             <header className="p-4 sm:p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/20">
+                <div><h2 className="text-lg sm:text-2xl font-bold text-white">{selectedLead.name}</h2><p className="text-xs text-slate-500">{selectedLead.email}</p></div>
                 <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-800 rounded-full"><X size={24} /></button>
              </header>
 
@@ -156,7 +156,7 @@ const Pipeline: React.FC = () => {
                 ))}
              </div>
 
-             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+             <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
                 {activeDetailTab === 'info' && (
                   <div className="space-y-6">
                     <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-2xl">
