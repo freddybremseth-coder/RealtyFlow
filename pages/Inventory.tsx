@@ -210,18 +210,30 @@ const Inventory: React.FC = () => {
     setIsSyncingXml(true);
     setError(null);
     try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Kunne ikke hente fra URL.`);
-      const text = await res.text();
+      // Try direct fetch first; fall back to CORS proxy if blocked
+      let text = '';
+      let fetchOk = false;
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (res.ok) { text = await res.text(); fetchOk = true; }
+      } catch { /* CORS or network – try proxy */ }
+
+      if (!fetchOk) {
+        const proxy = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+        const res = await fetch(proxy, { signal: AbortSignal.timeout(30000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status} via proxy – sjekk URL-en.`);
+        text = await res.text();
+      }
+
       const lower = url.toLowerCase();
-      if (lower.includes('.csv') || text.trimStart().startsWith('"') || (!text.trimStart().startsWith('<') && text.includes(','))) {
+      if (lower.includes('.csv') || (!text.trimStart().startsWith('<') && text.includes(','))) {
         await processCsvText(text);
       } else {
         await processXmlIncremental(text);
       }
       setXmlUrl('');
     } catch (err: any) {
-      setError(`URL-henting feilet: ${err.message}. Kontroller at serveren tillater CORS.`);
+      setError(`URL-henting feilet: ${err.message}`);
     } finally {
       setIsFetchingUrl(false);
       setIsSyncingXml(false);
@@ -291,6 +303,18 @@ const Inventory: React.FC = () => {
            <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Maks Pris" className="bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-sm text-slate-200 focus:border-cyan-500 w-40 outline-none" />
         </div>
       </section>
+
+      {/* ERROR */}
+      {error && (
+        <div className="p-6 glass border border-red-500/40 rounded-[2rem] flex items-start gap-4 bg-red-500/5">
+          <AlertTriangle size={22} className="text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-red-300 mb-1">Import feilet</p>
+            <p className="text-xs text-red-400/80 break-all">{error}</p>
+          </div>
+          <button onClick={() => setError(null)} className="text-slate-500 hover:text-slate-300 flex-shrink-0"><X size={18} /></button>
+        </div>
+      )}
 
       {/* PROGRESS */}
       {isSyncingXml && (
