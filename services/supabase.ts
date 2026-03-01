@@ -1,20 +1,11 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-// I Vercel/Vite brukes import.meta.env, men vi faller tilbake på prosess-variabler hvis nødvendig
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL  = 'https://kkswlrpvpyczngemphse.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtrc3dscnB2cHljem5nZW1waHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwODU3MTEsImV4cCI6MjA4NzY2MTcxMX0.xvhccZ82J4k7UxkPT8RMnWPT-6pAACIEfPWzui472yI';
 
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
-  console.warn("⚠️ Supabase er ikke fullstendig konfigurert. Appen kjører i lokal demo-modus.");
-}
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder'
-);
+export const isCloudConnected = true;
 
-// Sjekker om vi faktisk er koblet til en ekte sky-instans
-export const isCloudConnected = !!supabaseUrl && !supabaseUrl.includes('placeholder');
-
-export const networkDelay = () => new Promise(resolve => setTimeout(resolve, 300));
+export const networkDelay = () => new Promise(resolve => setTimeout(resolve, 100));
