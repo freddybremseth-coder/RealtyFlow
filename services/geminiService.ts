@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { LeadStatus, Lead, Property, MarketTheme, Brand, AdvisorProfile, EmailMessage, BrandVisualStyles, AppLanguage, PropertyValuationData, ValuationResult } from "../types";
 import { settingsStore } from "./settingsService";
 import { buildMarketDataPrompt, getAreaData, MARKET_DATA_UPDATED } from "./marketData";
@@ -216,37 +216,43 @@ export class GeminiService {
     return response.text || '';
   }
 
-  async generateMarketingImage(prompt: string, aspectRatio: "1:1" | "16:9" | "9:16" = "16:9", baseImage?: string) {
+  async generateMarketingImage(prompt: string, _aspectRatio: "1:1" | "16:9" | "9:16" = "16:9", baseImage?: string) {
     const ai = this.getClient();
+
+    const enhancedPrompt = baseImage
+      ? `Edit this real estate image: ${prompt}. Keep luxury Mediterranean coastal style.`
+      : `Luxury real estate marketing photo. Costa Blanca Spain. ${prompt}. Photorealistic, golden hour, 4K quality, professional architectural photography.`;
+
     const parts: any[] = [];
-    
     if (baseImage) {
       parts.push({
         inlineData: {
           data: baseImage.includes(',') ? baseImage.split(',')[1] : baseImage,
-          mimeType: 'image/png'
+          mimeType: 'image/jpeg'
         }
       });
-      parts.push({ text: `Modify image: ${prompt}. Maintain luxury Mediterranean style.` });
-    } else {
-      const enhancedPrompt = `High-end architectural photography, luxury new build real estate Spain, Mediterranean style. Subject: ${prompt}`;
-      parts.push({ text: enhancedPrompt });
     }
-    
+    parts.push({ text: enhancedPrompt });
+
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp',
-        contents: { parts },
-        config: { imageConfig: { aspectRatio } }
+        model: 'gemini-2.0-flash-preview-image-generation',
+        contents: [{ role: 'user', parts }],
+        config: {
+          responseModalities: [Modality.IMAGE, Modality.TEXT],
+        }
       });
-      
+
       const responseParts = response.candidates?.[0]?.content?.parts || [];
       for (const part of responseParts) {
-        if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+        if (part.inlineData?.data) {
+          const mime = part.inlineData.mimeType || 'image/png';
+          return `data:${mime};base64,${part.inlineData.data}`;
+        }
       }
-      throw new Error("No image returned.");
+      throw new Error("Ingen bilde ble returnert. Prøv en annen beskrivelse.");
     } catch (err: any) {
-      throw new Error(err.message || "Generation failed.");
+      throw new Error(err.message || "Bildegenerering feilet.");
     }
   }
 

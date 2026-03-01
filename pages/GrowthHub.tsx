@@ -427,15 +427,25 @@ const GrowthHub: React.FC = () => {
 
                           <div className="bg-slate-950/50 rounded-[2.5rem] border border-slate-800 overflow-hidden flex items-center justify-center min-h-[350px] relative group shadow-inner">
                              {generatedImage ? (
-                               <>
-                                 <img src={generatedImage} className="w-full h-full object-cover animate-in zoom-in-95 duration-700" />
-                               </>
+                               <img src={generatedImage} className="w-full h-full object-cover animate-in zoom-in-95 duration-700" />
+                             ) : isGeneratingImage ? (
+                               <div className="text-center space-y-4">
+                                 <Loader2 className="animate-spin text-indigo-400 mx-auto" size={40} />
+                                 <p className="text-slate-500 text-[10px] font-mono uppercase tracking-[0.2em]">Genererer bilde...</p>
+                               </div>
+                             ) : imageError ? (
+                               <div className="text-center space-y-4 p-8">
+                                 <AlertCircle className="text-red-400 mx-auto" size={36} />
+                                 <p className="text-red-400 text-xs font-bold">Bildegenerering feilet</p>
+                                 <p className="text-slate-500 text-[10px] leading-relaxed">{imageError}</p>
+                                 <button onClick={() => setImageError(null)} className="text-[10px] text-slate-500 hover:text-white underline">Prøv igjen</button>
+                               </div>
                              ) : (
                                <div className="text-center space-y-4">
                                   <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mx-auto border border-slate-800">
                                     <ImageIcon className="text-slate-700" size={32} />
                                   </div>
-                                  <p className="text-slate-600 text-[10px] font-mono uppercase tracking-[0.2em]">{isGeneratingImage ? 'Syntetiserer...' : 'Venter på bilde-generering'}</p>
+                                  <p className="text-slate-600 text-[10px] font-mono uppercase tracking-[0.2em]">Venter på bilde-generering</p>
                                </div>
                              )}
                           </div>
