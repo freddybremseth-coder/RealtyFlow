@@ -111,6 +111,17 @@ const MarketingTasks: React.FC = () => {
   const getPlatformStyle = (platform?: string) =>
     platform && PLATFORM_CONFIG[platform] ? PLATFORM_CONFIG[platform] : { color: 'text-slate-400', bg: 'bg-slate-800 border-slate-700' };
 
+  const stripMarkdown = (text: string) =>
+    text
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\*(.+?)\*/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^[-_*]{3,}$/gm, '')
+      .replace(/^>\s+/gm, '')
+      .replace(/`(.+?)`/g, '$1')
+      .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+      .trim();
+
   const handleAiExecute = async (task: MarketingTask) => {
     setIsAiRunning(true);
     setAiResult(null);
@@ -128,9 +139,12 @@ Skriv ferdig innhold for ${task.platform || 'denne plattformen'}.
 - For E-post: skriv emnefeltet og e-posttekst
 - For Nettside: skriv en blogg-intro på ca 150 ord
 
-Svar direkte med innholdet, ingen forklaring rundt.`;
-      const result = await gemini.generateCMSContent(task.platform || 'Social', prompt, 'soleada');
-      setAiResult(result);
+FORMATERINGSKRAV:
+- Bruk IKKE markdown (ingen **, *, #, ---)
+- Norsk setningskapitalisering: kun stor bokstav i starten av setning og ved egennavn/stedsnavn
+- Svar direkte med innholdet, ingen forklaring rundt`;
+      const raw = await gemini.generateCMSContent(task.platform || 'Social', prompt, 'soleada');
+      setAiResult(stripMarkdown(raw));
     } catch (err: any) {
       setAiResult(`Feil: ${err.message || 'Kunne ikke generere innhold. Sjekk API-nøkkel.'}`);
     } finally {

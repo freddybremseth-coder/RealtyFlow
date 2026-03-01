@@ -265,7 +265,13 @@ Return ONLY valid JSON, no markdown or code fences:
     const brand = settingsStore.getBrand(brandId);
     return this.chat(
       this.getContext(brand),
-      `Generate ${contentType} about: ${topic}.`,
+      `Skriv ${contentType} om: ${topic}.
+
+OBLIGATORISKE FORMATERINGSKRAV:
+- Bruk IKKE markdown-formatering. Ingen **, *, #, ##, ___, ---, eller andre markdown-tegn.
+- Norsk setningskapitalisering: stor bokstav KUN i starten av setninger, og for egennavn/stedsnavn (f.eks. Spania, Benidorm, Middelhavet, Costa Blanca). IKKE tittelkapitalisering.
+- Skriv overskrifter som vanlige setninger med stor bokstav kun i starten.
+- Skill avsnitt med tom linje. Bruk ikke punktlister med stjerner eller bindestrek.`,
       2048
     );
   }

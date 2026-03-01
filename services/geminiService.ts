@@ -303,7 +303,13 @@ export class GeminiService {
     const brand = settingsStore.getBrand(brandId);
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
-      contents: `Generate ${contentType} about: ${topic}.`,
+      contents: `Skriv ${contentType} om: ${topic}.
+
+OBLIGATORISKE FORMATERINGSKRAV:
+- Bruk IKKE markdown-formatering. Ingen **, *, #, ##, ___, ---, eller andre markdown-tegn.
+- Norsk setningskapitalisering: stor bokstav KUN i starten av setninger, og for egennavn/stedsnavn (f.eks. Spania, Benidorm, Middelhavet, Costa Blanca). IKKE tittelkapitalisering.
+- Skriv overskrifter som vanlige setninger med stor bokstav kun i starten.
+- Skill avsnitt med tom linje. Bruk ikke punktlister med stjerner eller bindestrek.`,
       config: { systemInstruction: this.getContext(brand) },
     });
     return response.text || '';

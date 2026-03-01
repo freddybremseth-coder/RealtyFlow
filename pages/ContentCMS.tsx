@@ -1,7 +1,22 @@
 
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { gemini } from '../services/claudeService';
 import { FileText, Send, BookOpen, Mail, Sparkles, Copy, Check, Download, RefreshCw, Layout, MousePointer2, HardHat } from 'lucide-react';
+
+// Fjerner gjenværende markdown-tegn som AI av og til produserer
+function cleanAiText(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold** → bold
+    .replace(/\*(.+?)\*/g, '$1')        // *italic* → italic
+    .replace(/^#{1,6}\s+/gm, '')        // ## Overskrift → Overskrift
+    .replace(/^[-_*]{3,}$/gm, '')       // --- horisontallinje → fjernes
+    .replace(/^>\s+/gm, '')             // > sitat → fjernes
+    .replace(/`(.+?)`/g, '$1')          // `kode` → kode
+    .replace(/\[(.+?)\]\(.+?\)/g, '$1') // [link](url) → link
+    .trim();
+}
 
 type ContentType = 'blog' | 'newsletter' | 'guide' | 'email' | 'presentation' | 'construction';
 
@@ -18,7 +33,7 @@ const ContentCMS: React.FC = () => {
     setIsGenerating(true);
     try {
       const content = await gemini.generateCMSContent(contentType, topic, brand);
-      setGeneratedText(content);
+      setGeneratedText(cleanAiText(content));
     } catch (err) {
       console.error(err);
       alert('Failed to generate content. Please check your API key.');
@@ -163,7 +178,7 @@ const ContentCMS: React.FC = () => {
                   <p className="text-slate-500 font-mono text-xs uppercase tracking-[0.2em]">Crafting professional content...</p>
                 </div>
               ) : generatedText ? (
-                <div className="prose prose-invert max-w-none prose-p:text-slate-300 prose-headings:text-cyan-400 prose-headings:font-bold prose-p:leading-relaxed whitespace-pre-wrap text-lg">
+                <div className="text-slate-300 text-base leading-[1.85] whitespace-pre-wrap font-sans">
                   {generatedText}
                 </div>
               ) : (
