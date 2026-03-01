@@ -2,8 +2,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LeadStatus, Lead, Property, ViewingItem, CallLog, NurtureStep, EmailMessage } from '../types';
 import { leadStore } from '../services/leadService';
+import { crmStore } from '../services/crmService';
 import { propertyStore } from '../services/propertyService';
 import { BRANDS } from '../constants';
+import { useNavigate } from 'react-router-dom';
 import { 
   X, Plus, Sparkles, Zap, BrainCircuit, Target, BarChart, 
   ChevronRight, CheckCircle2, Phone, Mail, Loader2, 
@@ -22,8 +24,12 @@ const COLUMNS = [
 ];
 
 const Pipeline: React.FC = () => {
+  const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>('all');
+  const [convertedLeadIds, setConvertedLeadIds] = useState<Set<string>>(
+    new Set(crmStore.getCustomers().filter(c => c.leadId).map(c => c.leadId!))
+  );
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -61,6 +67,13 @@ const Pipeline: React.FC = () => {
     setSelectedLead(lead);
     setEmailAnalysis(null);
     setActiveDetailTab('info');
+  };
+
+  const handleConvertToCustomer = (lead: Lead) => {
+    crmStore.convertFromLead(lead);
+    setConvertedLeadIds(prev => new Set([...prev, lead.id]));
+    setSelectedLead(null);
+    navigate('/crm');
   };
 
   const handleEmailAnalysis = async () => {
@@ -141,7 +154,21 @@ const Pipeline: React.FC = () => {
           <div className="w-full lg:w-[700px] bg-[#0a0a0c] border-l border-slate-800 h-full flex flex-col shadow-2xl">
              <header className="p-4 sm:p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/20">
                 <div><h2 className="text-lg sm:text-2xl font-bold text-white">{selectedLead.name}</h2><p className="text-xs text-slate-500">{selectedLead.email}</p></div>
-                <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-800 rounded-full"><X size={24} /></button>
+                <div className="flex items-center gap-2">
+                  {convertedLeadIds.has(selectedLead.id) ? (
+                    <span className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+                      <UserCheck size={14} /> Konvertert
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleConvertToCustomer(selectedLead)}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      <UserCheck size={14} /> Gjør til Kunde
+                    </button>
+                  )}
+                  <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-800 rounded-full"><X size={24} /></button>
+                </div>
              </header>
 
              <div className="flex bg-slate-950 p-1 border-b border-slate-800">

@@ -10,7 +10,7 @@ import {
   Building, AlertCircle, BarChart3, ChevronRight, 
   Calculator, Loader2, X, FileText, Download, Copy, Check,
   Sparkles, Save, Clock, Calendar, History, Trash2, Send, Rocket, RefreshCw, Table,
-  Settings as SettingsIcon, ToggleLeft, ToggleRight, Building2, UserCircle, RotateCcw
+  Settings as SettingsIcon, ToggleLeft, ToggleRight, Building2, UserCircle, RotateCcw, Printer
 } from 'lucide-react';
 import { MarketTheme, MarketAnalysis, MarketSchedule, Brand, AdvisorProfile } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -40,6 +40,7 @@ const MarketPulse: React.FC = () => {
   const [roiReport, setRoiReport] = useState<string | null>(null);
   const [isGeneratingROI, setIsGeneratingROI] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showPrintReport, setShowPrintReport] = useState(false);
 
   const [calcData, setCalcData] = useState({ price: 450000, rent: 2200, expenses: 400 });
 
@@ -251,13 +252,22 @@ const MarketPulse: React.FC = () => {
                         </div>
                      </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => openSaveDialog()}
-                    className="flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-2 sm:py-4 bg-slate-900 text-slate-300 rounded-xl sm:rounded-2xl border border-slate-800 text-xs font-bold uppercase hover:bg-slate-800 transition-all shadow-xl active:scale-95 z-20 flex-shrink-0"
-                  >
-                     <Save size={16} /> Lagre
-                  </button>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowPrintReport(true)}
+                      className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-4 bg-indigo-600 text-white rounded-xl sm:rounded-2xl text-xs font-bold uppercase hover:bg-indigo-500 transition-all shadow-xl active:scale-95 z-20"
+                    >
+                      <Download size={16} /> PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openSaveDialog()}
+                      className="flex items-center gap-2 sm:gap-3 px-4 sm:px-8 py-2 sm:py-4 bg-slate-900 text-slate-300 rounded-xl sm:rounded-2xl border border-slate-800 text-xs font-bold uppercase hover:bg-slate-800 transition-all shadow-xl active:scale-95 z-20"
+                    >
+                      <Save size={16} /> Lagre
+                    </button>
+                  </div>
                </div>
 
                <div className="prose prose-invert max-w-none
@@ -552,6 +562,119 @@ const MarketPulse: React.FC = () => {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 20px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
       `}</style>
+
+      {/* PDF PRINT MODAL */}
+      {showPrintReport && analysis && (
+        <div className="fixed inset-0 z-[500] bg-white text-slate-900 flex flex-col animate-in fade-in duration-300 overflow-hidden print:block">
+          <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+          {/* Toolbar – skjult ved print */}
+          <div className="bg-slate-950 text-white p-4 flex justify-between items-center print:hidden border-b border-slate-800">
+            <div className="flex items-center gap-4">
+              <button onClick={() => setShowPrintReport(false)} className="p-2 hover:bg-slate-800 rounded-lg"><X size={22} /></button>
+              <span className="text-sm font-bold text-slate-300">Forhåndsvisning – PDF</span>
+            </div>
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:opacity-90 transition-all shadow-lg text-white"
+              style={{ backgroundColor: brandPrimary }}
+            >
+              <Printer size={16} /> Lagre som PDF
+            </button>
+          </div>
+
+          {/* Dokumentvisning */}
+          <div className="flex-1 overflow-y-auto bg-slate-100 p-4 lg:p-12 print:p-0 print:bg-white">
+            <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl overflow-hidden min-h-[1200px] flex flex-col p-10 lg:p-16 space-y-10 print:shadow-none print:rounded-none">
+
+              {/* Topptekst med brand og profil */}
+              <header className="flex justify-between items-start border-b-4 pb-8" style={{ borderColor: brandPrimary }}>
+                <div className="space-y-3">
+                  {activeBrand?.logo ? (
+                    <img src={activeBrand.logo} className="h-14 w-auto object-contain" />
+                  ) : (
+                    <div className="flex items-center gap-2" style={{ color: brandPrimary }}>
+                      <BarChart3 size={28} />
+                      <h1 className="text-2xl font-bold uppercase tracking-tighter" style={{ fontFamily: 'Space Mono' }}>{activeBrand?.name}</h1>
+                    </div>
+                  )}
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{activeBrand?.description}</p>
+                  <p className="text-xs text-slate-500">{activeBrand?.website}</p>
+                </div>
+                <div className="text-right space-y-2">
+                  <div className="flex items-center justify-end gap-3">
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-slate-900">{profile.name}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: brandPrimary }}>Property Advisor</p>
+                    </div>
+                    {profile.imageUrl && (
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200">
+                        <img src={profile.imageUrl} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 space-y-0.5">
+                    {activeBrand?.phone && <p>{activeBrand.phone}</p>}
+                    {activeBrand?.email && <p>{activeBrand.email}</p>}
+                  </div>
+                </div>
+              </header>
+
+              {/* Tittel og metadata */}
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold text-slate-900 uppercase tracking-tighter" style={{ fontFamily: 'Space Mono', color: brandPrimary }}>
+                  {activeResearchTopic ? `Rapport: ${activeResearchTopic.toUpperCase()}` : 'Markedsanalyse'}
+                </h2>
+                <div className="flex gap-6 text-xs text-slate-500 font-mono">
+                  <span className="flex items-center gap-1"><MapPin size={11} /> {location.toUpperCase()}</span>
+                  <span>{activeBrand?.name}</span>
+                  <span>{new Date().toLocaleDateString('nb-NO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
+              </div>
+
+              {/* Innhold i Markdown */}
+              <div className="prose prose-slate max-w-none
+                prose-h1:text-2xl prose-h1:font-bold prose-h1:text-center prose-h1:mb-6 prose-h1:tracking-tight
+                prose-h2:text-lg prose-h2:font-bold prose-h2:border-l-4 prose-h2:pl-3 prose-h2:mt-6 prose-h2:mb-3 prose-h2:uppercase
+                prose-h3:text-base prose-h3:font-bold prose-h3:mt-4 prose-h3:mb-2
+                prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-sm
+                prose-li:text-slate-600 prose-li:text-sm
+                prose-table:w-full prose-table:border-collapse
+                prose-th:bg-slate-100 prose-th:p-2 prose-th:text-left prose-th:border prose-th:border-slate-200 prose-th:text-xs prose-th:uppercase
+                prose-td:p-2 prose-td:border prose-td:border-slate-200 prose-td:text-sm"
+                style={{ '--tw-prose-headings': brandPrimary } as any}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysis.text}</ReactMarkdown>
+              </div>
+
+              {/* Kilder */}
+              {analysis.sources?.length > 0 && (
+                <div className="pt-8 border-t border-slate-200">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Kildegrunnlag</h4>
+                  <ul className="space-y-2">
+                    {analysis.sources.map((s, i) => (
+                      <li key={i} className="text-xs text-slate-500">
+                        <span className="font-bold text-slate-700">{s.title}</span> – {s.url}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Bunntekst med rådgiver */}
+              <footer className="mt-auto pt-8 border-t border-slate-200 flex items-center justify-between">
+                <div className="text-[10px] text-slate-400 leading-relaxed">
+                  {profile.signature?.split('\n').map((l, i) => <p key={i}>{l}</p>)}
+                </div>
+                {activeBrand?.logo ? (
+                  <img src={activeBrand.logo} className="h-8 w-auto object-contain opacity-50" />
+                ) : (
+                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{activeBrand?.name}</p>
+                )}
+              </footer>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

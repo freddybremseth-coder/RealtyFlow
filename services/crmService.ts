@@ -1,5 +1,5 @@
 
-import { Customer, CustomerStatus, CustomerType } from '../types';
+import { Customer, CustomerStatus, CustomerType, Lead } from '../types';
 
 const STORAGE_KEY = 'rf_crm_customers';
 
@@ -94,6 +94,35 @@ class CrmService {
     this.customers = this.customers.map(c => c.id === id ? { ...c, ...updates } : c);
     save(this.customers);
     this.notify();
+  }
+
+  convertFromLead(lead: Lead): Customer {
+    const customer: Customer = {
+      id: `crm-${Date.now()}`,
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone || '',
+      source: lead.source || 'Pipeline',
+      status: CustomerStatus.ACTIVE,
+      type: CustomerType.BUYER,
+      notes: lead.summary || undefined,
+      budget: lead.requirements?.budget || lead.value || undefined,
+      location: lead.requirements?.location || undefined,
+      tags: ['Fra pipeline'],
+      leadId: lead.id,
+      brandId: lead.brandId,
+      createdAt: new Date().toISOString(),
+      lastContact: new Date().toISOString(),
+      totalValue: lead.value || 0,
+      propertiesInterested: [],
+      propertiesBought: [],
+    };
+    // Unngå duplikat hvis allerede konvertert
+    const exists = this.customers.some(c => c.leadId === lead.id);
+    if (!exists) {
+      this.addCustomer(customer);
+    }
+    return customer;
   }
 
   removeCustomer(id: string): void {

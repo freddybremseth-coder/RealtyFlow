@@ -26,7 +26,10 @@ const Inventory: React.FC = () => {
   const [importLog, setImportLog] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
+  const [minBedrooms, setMinBedrooms] = useState<string>('');
+  const [filterType, setFilterType] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [xmlUrl, setXmlUrl] = useState('');
@@ -85,18 +88,32 @@ const Inventory: React.FC = () => {
     };
   };
 
+  // Samle alle unike eiendomstyper
+  const propertyTypes = useMemo(() => {
+    const types = new Set<string>();
+    properties.forEach(p => {
+      const t = (p as any).property_type || (p as any).propertyType;
+      if (t) types.add(t);
+    });
+    return Array.from(types).sort();
+  }, [properties]);
+
   const filteredProperties = useMemo(() => {
     return properties.filter(prop => {
-      const matchesMaxPrice = !maxPrice || prop.price <= parseInt(maxPrice);
-      const matchesSearch = !searchQuery || 
-        prop.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const price = prop.price || 0;
+      const matchesMinPrice = !minPrice || price >= parseInt(minPrice);
+      const matchesMaxPrice = !maxPrice || price <= parseInt(maxPrice);
+      const matchesBeds = !minBedrooms || (prop.bedrooms || 0) >= parseInt(minBedrooms);
+      const propType = (prop as any).property_type || (prop as any).propertyType || '';
+      const matchesType = !filterType || propType.toLowerCase().includes(filterType.toLowerCase());
+      const matchesSearch = !searchQuery ||
+        prop.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         prop.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (prop.developer && prop.developer.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (prop.external_id && prop.external_id.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      return matchesMaxPrice && matchesSearch;
+      return matchesMinPrice && matchesMaxPrice && matchesBeds && matchesType && matchesSearch;
     });
-  }, [properties, maxPrice, searchQuery]);
+  }, [properties, minPrice, maxPrice, minBedrooms, filterType, searchQuery]);
 
   const formatDescription = (text: string) => {
     if (!text) return "";
@@ -289,14 +306,51 @@ const Inventory: React.FC = () => {
       </header>
 
       {/* FILTERS */}
-      <section className="glass p-6 lg:p-10 rounded-[3rem] border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-[0.2em] flex items-center gap-3"><Filter size={18} className="text-cyan-400" /> Filter</h3>
-        <div className="flex gap-4 w-full md:w-auto">
-           <div className="relative flex-1 sm:w-80">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Søk i Ref, By, eller Utbygger..." className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 py-4 text-sm text-slate-200 focus:border-cyan-500 outline-none" />
-           </div>
-           <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Maks Pris" className="bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-sm text-slate-200 focus:border-cyan-500 w-40 outline-none" />
+      <section className="glass p-6 rounded-[2.5rem] border border-slate-800 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-300 uppercase tracking-[0.2em] flex items-center gap-3"><Filter size={18} className="text-cyan-400" /> Filter</h3>
+          {(searchQuery || minPrice || maxPrice || minBedrooms || filterType) && (
+            <button
+              onClick={() => { setSearchQuery(''); setMinPrice(''); setMaxPrice(''); setMinBedrooms(''); setFilterType(''); }}
+              className="text-[10px] text-slate-500 hover:text-red-400 flex items-center gap-1 transition-colors"
+            >
+              <X size={12} /> Nullstill
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {/* Søk */}
+          <div className="relative lg:col-span-2">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Søk Ref, by, utbygger..." className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-10 pr-4 py-3 text-sm text-slate-200 focus:border-cyan-500 outline-none" />
+          </div>
+          {/* Min pris */}
+          <div className="relative">
+            <Euro className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+            <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="Min pris" className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-9 pr-4 py-3 text-sm text-slate-200 focus:border-cyan-500 outline-none" />
+          </div>
+          {/* Maks pris */}
+          <div className="relative">
+            <Euro className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+            <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="Maks pris" className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-9 pr-4 py-3 text-sm text-slate-200 focus:border-cyan-500 outline-none" />
+          </div>
+          {/* Soverom */}
+          <select value={minBedrooms} onChange={e => setMinBedrooms(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-slate-300 focus:border-cyan-500 outline-none">
+            <option value="">Alle soverom</option>
+            <option value="1">Min. 1 soverom</option>
+            <option value="2">Min. 2 soverom</option>
+            <option value="3">Min. 3 soverom</option>
+            <option value="4">Min. 4 soverom</option>
+            <option value="5">Min. 5 soverom</option>
+          </select>
+        </div>
+        {/* Eiendomstype + resultat-teller */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <button onClick={() => setFilterType('')} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${!filterType ? 'bg-cyan-500 text-slate-950 border-cyan-500' : 'border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-300'}`}>Alle typer</button>
+          {propertyTypes.slice(0, 8).map(t => (
+            <button key={t} onClick={() => setFilterType(filterType === t ? '' : t)} className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${filterType === t ? 'bg-cyan-500 text-slate-950 border-cyan-500' : 'border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-300'}`}>{t}</button>
+          ))}
+          <span className="ml-auto text-[10px] text-slate-500 font-mono">{filteredProperties.length} / {properties.length} boliger</span>
         </div>
       </section>
 
