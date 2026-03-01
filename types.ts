@@ -157,6 +157,10 @@ export interface IntegrationSettings {
   youtubeApiKey?: string;
   pinterestApiKey?: string;
   emailAppPassword?: string;
+  emailProtocol?: 'IMAP' | 'POP3';
+  emailServer?: string;
+  emailPort?: string;
+  emailUsername?: string;
 }
 
 export interface Brand {

@@ -162,10 +162,15 @@ const LiveAssistant: React.FC = () => {
               setStatus('Thinking');
               for (const fc of message.toolCall.functionCalls) {
                 addLog(`Tool: ${fc.name}`, "action");
-                // Explicitly typed as any to allow assigning Lead array
                 let result: any = "Data fetched.";
-                // Fixed: Await the promise returned by getLeads() before calling slice.
-                if (fc.name === 'get_leads') result = (await leadStore.getLeads()).slice(0, 5);
+                if (fc.name === 'get_leads') {
+                  result = (await leadStore.getLeads()).slice(0, 5);
+                } else if (fc.name === 'get_properties') {
+                  let props = propertyStore.getProperties();
+                  if (fc.args?.location) props = props.filter(p => p.location.toLowerCase().includes((fc.args.location as string).toLowerCase()));
+                  if (fc.args?.maxPrice) props = props.filter(p => p.price <= (fc.args.maxPrice as number));
+                  result = props.slice(0, 5).map(p => ({ title: p.title, location: p.location, price: p.price, bedrooms: p.bedrooms, area: p.area }));
+                }
                 const session = await sessionPromise;
                 session.sendToolResponse({ functionResponses: { id: fc.id, name: fc.name, response: { result } } });
               }
@@ -205,7 +210,7 @@ const LiveAssistant: React.FC = () => {
           onclose: () => stopSession()
         },
         config: {
-          responseModalalities: [Modality.AUDIO],
+          responseModalities: [Modality.AUDIO],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
           tools: [{ functionDeclarations: [get_leads_tool, get_properties_tool] }],
           outputAudioTranscription: {},
@@ -225,28 +230,31 @@ const LiveAssistant: React.FC = () => {
     if (typeof e !== 'string') e?.preventDefault();
     if (!msg.trim()) return;
 
-    // Hvis ikke aktiv, start sesjon først
-    if (!isActive) {
-      addLog("Initializing Advisor via command...", "action");
-      await startSession();
-      // Vent litt på at isActive blir true (i en ekte app ville man ventet på session resolve)
-    }
-
     setTextInput('');
     setTranscription(prev => [...prev.slice(-30), { role: 'user', text: msg }]);
-    
-    // Forsøk å sende
+
+    if (!isActive && !sessionRef.current) {
+      addLog("Initializing Advisor...", "action");
+      await startSession();
+      // Poll until session is ready (max 8 seconds)
+      await new Promise<void>((resolve) => {
+        let attempts = 0;
+        const check = setInterval(() => {
+          attempts++;
+          if (sessionRef.current || attempts > 16) { clearInterval(check); resolve(); }
+        }, 500);
+      });
+    }
+
     if (sessionRef.current) {
-      sessionRef.current.send({ parts: [{ text: msg }] });
-      setStatus('Thinking');
+      try {
+        sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: [{ text: msg }] }], turnComplete: true });
+        setStatus('Thinking');
+      } catch (err) {
+        addLog("Feil ved sending. Prøv igjen.", "info");
+      }
     } else {
-      // Hvis sesjonen fortsatt kobler til, vent og prøv igjen
-      setTimeout(() => {
-        if (sessionRef.current) {
-          sessionRef.current.send({ parts: [{ text: msg }] });
-          setStatus('Thinking');
-        }
-      }, 2000);
+      addLog("Sesjonen er ikke klar. Start med mikrofon-knappen.", "info");
     }
   };
 

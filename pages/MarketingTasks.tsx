@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { MarketingTask, MarketingTaskStatus } from '../types';
 import { marketingTaskStore } from '../services/marketingTaskService';
+import { gemini } from '../services/geminiService';
 import {
   Megaphone, Plus, X, Instagram, Twitter, Linkedin, Mail,
   Facebook, Video, Globe, Flag, Loader2, GripVertical,
-  ChevronRight, Clock, Tag, Trash2
+  ChevronRight, Clock, Tag, Trash2, Sparkles, Copy, Check
 } from 'lucide-react';
 
 const COLUMNS: { id: MarketingTaskStatus; label: string; color: string; dot: string }[] = [
@@ -51,6 +52,9 @@ const MarketingTasks: React.FC = () => {
   const [filterPlatform, setFilterPlatform] = useState<string>('all');
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<MarketingTaskStatus | null>(null);
+  const [aiResult, setAiResult] = useState<string | null>(null);
+  const [isAiRunning, setIsAiRunning] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     return marketingTaskStore.subscribe(() => setTasks(marketingTaskStore.getTasks()));
@@ -106,6 +110,40 @@ const MarketingTasks: React.FC = () => {
 
   const getPlatformStyle = (platform?: string) =>
     platform && PLATFORM_CONFIG[platform] ? PLATFORM_CONFIG[platform] : { color: 'text-slate-400', bg: 'bg-slate-800 border-slate-700' };
+
+  const handleAiExecute = async (task: MarketingTask) => {
+    setIsAiRunning(true);
+    setAiResult(null);
+    try {
+      const prompt = `Du er en markedsføringsspesialist for spansk eiendom. Utfør følgende markedsoppgave og skriv ferdig innhold klart til bruk:
+
+Oppgave: ${task.title}
+Plattform: ${task.platform || 'Generell'}
+Beskrivelse: ${task.content || 'Ingen ekstra beskrivelse'}
+Tags: ${task.tags?.join(', ') || 'ingen'}
+
+Skriv ferdig innhold for ${task.platform || 'denne plattformen'}.
+- For Instagram/Facebook/TikTok: skriv post-tekst med emojier og hashtags
+- For LinkedIn: skriv profesjonelt innlegg
+- For E-post: skriv emnefeltet og e-posttekst
+- For Nettside: skriv en blogg-intro på ca 150 ord
+
+Svar direkte med innholdet, ingen forklaring rundt.`;
+      const result = await gemini.generateCMSContent(task.platform || 'Social', prompt, 'soleada');
+      setAiResult(result);
+    } catch (err: any) {
+      setAiResult(`Feil: ${err.message || 'Kunne ikke generere innhold. Sjekk API-nøkkel.'}`);
+    } finally {
+      setIsAiRunning(false);
+    }
+  };
+
+  const handleCopyAiResult = () => {
+    if (!aiResult) return;
+    navigator.clipboard.writeText(aiResult);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="space-y-6 lg:space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -296,6 +334,38 @@ const MarketingTasks: React.FC = () => {
                   Frist: {new Date(selected.dueDate + 'T12:00:00').toLocaleDateString('nb-NO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
               )}
+
+              {/* AI EXECUTION */}
+              <div className="pt-4 border-t border-slate-800 space-y-4">
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <Sparkles size={12} className="text-cyan-400" /> Utfør med AI
+                </h4>
+                <button
+                  onClick={() => { setAiResult(null); handleAiExecute(selected); }}
+                  disabled={isAiRunning}
+                  className="w-full py-4 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 hover:bg-cyan-500/20 transition-all"
+                >
+                  {isAiRunning ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                  {isAiRunning ? 'AI jobber...' : 'La AI skrive innholdet'}
+                </button>
+
+                {aiResult && (
+                  <div className="space-y-3 animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">AI-generert innhold</span>
+                      <button
+                        onClick={handleCopyAiResult}
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-white px-3 py-1.5 bg-slate-800 rounded-lg transition-all"
+                      >
+                        {copied ? <><Check size={12} className="text-emerald-400" /> Kopiert</> : <><Copy size={12} /> Kopier</>}
+                      </button>
+                    </div>
+                    <div className="p-4 bg-slate-900/80 border border-emerald-500/20 rounded-2xl text-sm text-slate-300 leading-relaxed whitespace-pre-wrap max-h-72 overflow-y-auto custom-scrollbar">
+                      {aiResult}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

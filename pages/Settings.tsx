@@ -747,19 +747,64 @@ const Settings: React.FC = () => {
                     />
                   </div>
                   {brand.integrations?.emailSyncActive && (
-                    <div>
-                      <label className={lCls}>App-passord (Gmail / Outlook)</label>
-                      <input
-                        className={iCls}
-                        type="password"
-                        defaultValue={brand.integrations?.emailAppPassword || ''}
-                        placeholder="xxxx xxxx xxxx xxxx"
-                        onBlur={e => saveIntegrationKey(brand, 'emailAppPassword', e.target.value)}
-                      />
-                      <p className="text-[11px] text-slate-600 mt-1.5 flex items-center gap-1">
-                        <AlertTriangle size={10} />
-                        Bruk app-spesifikt passord — ikke ditt vanlige passord.
-                      </p>
+                    <div className="space-y-3 p-4 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={lCls}>Protokoll</label>
+                          <select
+                            className={iCls}
+                            value={brand.integrations?.emailProtocol || 'IMAP'}
+                            onChange={e => saveIntegrationKey(brand, 'emailProtocol', e.target.value)}
+                          >
+                            <option value="IMAP">IMAP</option>
+                            <option value="POP3">POP3</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className={lCls}>Port</label>
+                          <input
+                            className={iCls}
+                            type="text"
+                            defaultValue={brand.integrations?.emailPort || (brand.integrations?.emailProtocol === 'POP3' ? '995' : '993')}
+                            placeholder="993"
+                            onBlur={e => saveIntegrationKey(brand, 'emailPort', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className={lCls}>Innkommende e-post server</label>
+                        <input
+                          className={iCls}
+                          type="text"
+                          defaultValue={brand.integrations?.emailServer || ''}
+                          placeholder="imap.gmail.com / mail.dittdomene.no"
+                          onBlur={e => saveIntegrationKey(brand, 'emailServer', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className={lCls}>Brukernavn / E-postadresse</label>
+                        <input
+                          className={iCls}
+                          type="email"
+                          defaultValue={brand.integrations?.emailUsername || ''}
+                          placeholder="din@epost.no"
+                          onBlur={e => saveIntegrationKey(brand, 'emailUsername', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className={lCls}>Passord / App-passord</label>
+                        <input
+                          className={iCls}
+                          type="password"
+                          defaultValue={brand.integrations?.emailAppPassword || ''}
+                          placeholder="xxxx xxxx xxxx xxxx"
+                          onBlur={e => saveIntegrationKey(brand, 'emailAppPassword', e.target.value)}
+                        />
+                        <p className="text-[11px] text-slate-600 mt-1.5 flex items-center gap-1">
+                          <AlertTriangle size={10} />
+                          For Gmail/Outlook: bruk app-spesifikt passord, ikke ditt vanlige.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>

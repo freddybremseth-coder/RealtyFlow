@@ -188,6 +188,7 @@ const Inventory: React.FC = () => {
         description: get('description', 'beskrivelse', 'details'),
         imageUrl: get('imageurl', 'image', 'photo', 'bilde', 'img') || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
         gallery: [],
+        status: 'Available',
         developer: get('developer', 'builder', 'utbygger'),
         propertyType: get('type', 'propertytype', 'type'),
       } as Property;
@@ -518,28 +519,45 @@ const Inventory: React.FC = () => {
                 </header>
 
                 {/* HERO SECTION */}
-                <section className="space-y-8">
-                   <div className="relative aspect-[16/10] rounded-2xl overflow-hidden shadow-xl border border-slate-100">
+                <section className="space-y-6">
+                   <div className="relative aspect-[16/9] rounded-2xl overflow-hidden shadow-xl border border-slate-100">
                       <img src={selectedProperty.imageUrl} className="w-full h-full object-cover" />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-10 pt-20">
-                         <h2 className="text-4xl font-bold text-white leading-tight uppercase tracking-tight" style={{ fontFamily: headingFont }}>{selectedProperty.title}</h2>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-8 pt-16">
+                         <h2 className="text-3xl font-bold text-white leading-tight uppercase tracking-tight" style={{ fontFamily: headingFont }}>{selectedProperty.title}</h2>
                          <div className="flex items-center gap-3 text-white/90 text-sm mt-2 font-medium">
-                            <MapPin size={18} fill="currentColor" /> {selectedProperty.location} • {selectedProperty.external_id}
+                            <MapPin size={16} fill="currentColor" /> {selectedProperty.location} • {selectedProperty.external_id}
                          </div>
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-4 gap-4">
+                   {/* IMAGE GALLERY */}
+                   {selectedProperty.gallery && selectedProperty.gallery.length > 0 && (
+                     <div className="space-y-3">
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: brandSecondary }}>Bildegalleri</p>
+                        <div className="grid grid-cols-3 gap-3">
+                           {selectedProperty.gallery.slice(0, 6).map((img, i) => (
+                             <div key={i} className="aspect-[4/3] rounded-xl overflow-hidden border border-slate-100 shadow-sm">
+                                <img src={img} className="w-full h-full object-cover" />
+                             </div>
+                           ))}
+                        </div>
+                        {selectedProperty.gallery.length > 6 && (
+                          <p className="text-[10px] text-slate-400 text-center">+{selectedProperty.gallery.length - 6} flere bilder tilgjengelig</p>
+                        )}
+                     </div>
+                   )}
+
+                   <div className="grid grid-cols-4 gap-3">
                       {[
-                        { label: 'Pris', val: `€${selectedProperty.price?.toLocaleString()}`, icon: <Euro size={16} /> },
-                        { label: 'Areal', val: `${selectedProperty.area} m²`, icon: <Ruler size={16} /> },
-                        { label: 'Soverom', val: selectedProperty.bedrooms, icon: <BedDouble size={16} /> },
-                        { label: 'Baderom', val: selectedProperty.bathrooms, icon: <Bath size={16} /> },
+                        { label: 'Pris', val: `€${selectedProperty.price?.toLocaleString()}`, icon: <Euro size={15} /> },
+                        { label: 'Areal', val: `${selectedProperty.area} m²`, icon: <Ruler size={15} /> },
+                        { label: 'Soverom', val: selectedProperty.bedrooms, icon: <BedDouble size={15} /> },
+                        { label: 'Baderom', val: selectedProperty.bathrooms, icon: <Bath size={15} /> },
                       ].map((item, i) => (
-                        <div key={i} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-                           <div className="flex justify-center mb-2" style={{ color: brandPrimary }}>{item.icon}</div>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
-                           <p className="text-lg font-bold text-slate-900 font-mono">{item.val}</p>
+                        <div key={i} className="p-5 rounded-2xl border text-center" style={{ backgroundColor: `${brandPrimary}08`, borderColor: `${brandPrimary}20` }}>
+                           <div className="flex justify-center mb-1.5" style={{ color: brandPrimary }}>{item.icon}</div>
+                           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
+                           <p className="text-base font-bold text-slate-900 font-mono">{item.val}</p>
                         </div>
                       ))}
                    </div>
@@ -592,6 +610,14 @@ const Inventory: React.FC = () => {
           </div>
         </div>
       )}
+      <style>{`
+        @media print {
+          body { margin: 0; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .print\\:hidden { display: none !important; }
+          @page { margin: 0; size: A4; }
+        }
+      `}</style>
     </div>
   );
 };
