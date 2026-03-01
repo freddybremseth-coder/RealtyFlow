@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Camera, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { gemini } from '../services/claudeService';
+import { leadStore } from '../services/leadService';
+import { LeadStatus } from '../types';
 
 export const LeadScanner = () => {
   const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
@@ -12,31 +15,54 @@ export const LeadScanner = () => {
     setStatus('uploading');
     setMessage('Analyserer skjema med AI...');
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('source', 'RealtyFlow App');
-
     try {
-      // Bruker environment variable for webhook URL, eller fallback
-      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_OCR || 'https://DIN-N8N-URL/webhook/ocr-lead';
-      
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        body: formData,
-      });
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          const base64 = (ev.target?.result as string).split(',')[1];
+          const extracted = await gemini.extractLeadsFromImage(base64, file.type);
 
-      if (response.ok) {
-        setStatus('success');
-        setMessage('Lead lagret i Airtable!');
-        setTimeout(() => setStatus('idle'), 3000);
-      } else {
-        throw new Error('Opplasting feilet');
-      }
-    } catch (error) {
-      console.error(error);
+          if (!extracted || extracted.length === 0) {
+            setStatus('error');
+            setMessage('Ingen kontaktinfo funnet i bildet.');
+            return;
+          }
+
+          for (const l of extracted) {
+            await leadStore.addLead({
+              id: `scan-${Math.random().toString(36).substr(2, 9)}`,
+              status: LeadStatus.NEW,
+              sentiment: 70,
+              urgency: 60,
+              intent: 80,
+              lastActivity: 'AI Skjema-skann',
+              source: 'Lead Scanner',
+              value: l.value || 0,
+              name: l.name || 'Ukjent',
+              email: l.email || '',
+              phone: l.phone || '',
+              summary: l.summary || '',
+              personalityType: l.personalityType || '',
+              requirements: { budget: l.value || 0, location: l.location || '' },
+            });
+          }
+
+          setStatus('success');
+          setMessage(`${extracted.length} lead${extracted.length > 1 ? 's' : ''} lagret!`);
+          setTimeout(() => setStatus('idle'), 3000);
+        } catch (err: any) {
+          setStatus('error');
+          setMessage(err.message || 'AI-analyse feilet.');
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error: any) {
       setStatus('error');
-      setMessage('Kunne ikke sende bilde. Sjekk nettverk/webhook.');
+      setMessage(error.message || 'Kunne ikke lese bildet.');
     }
+
+    // Reset input so same file can be re-selected
+    e.target.value = '';
   };
 
   return (
@@ -49,8 +75,8 @@ export const LeadScanner = () => {
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
         disabled={status === 'uploading'}
       />
-      
-      <button 
+
+      <button
         className={`
           flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold transition-all border
           ${status === 'idle' ? 'bg-[#00D9FF]/10 border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/20' : ''}
@@ -62,7 +88,7 @@ export const LeadScanner = () => {
         {status === 'idle' && <><Camera className="w-5 h-5" /> SCAN LEAD FORM</>}
         {status === 'uploading' && <><Loader2 className="w-5 h-5 animate-spin" /> {message}</>}
         {status === 'success' && <><CheckCircle className="w-5 h-5" /> {message}</>}
-        {status === 'error' && <><AlertTriangle className="w-5 h-5" /> GLITCH!</>}
+        {status === 'error' && <><AlertTriangle className="w-5 h-5" /> {message}</>}
       </button>
     </div>
   );

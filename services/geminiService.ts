@@ -57,7 +57,9 @@ export class GeminiService {
   }
 
   private getClient() {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = settingsStore.getApiKeys().gemini;
+    if (!apiKey) throw new Error("Mangler Gemini API-nøkkel. Gå til Innstillinger → AI-nøkler.");
+    return new GoogleGenAI({ apiKey });
   }
 
   private cleanJson(text: string): string {
@@ -69,7 +71,7 @@ export class GeminiService {
     const prompt = `Create a comprehensive market analysis for ${location}. Theme: ${theme.toUpperCase()}. Include specific info about Costa Blanca and Costa Calida. Analyze from an investor and advisor perspective.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: { 
         systemInstruction: this.getContext(brand, profile),
@@ -92,7 +94,7 @@ export class GeminiService {
     
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         contents: `Create viral ad for ${brand?.name}. Platform: ${platform}. Objective: ${objective}. Focus on new builds in Costa Blanca/Costa Calida. Return JSON with headlines, body text, and strategic hooks. Headlines must promise safety and solutions.`,
         config: {
           systemInstruction: this.getContext(brand),
@@ -122,7 +124,7 @@ export class GeminiService {
   async extractLeadsFromContent(content: string) {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: `Extract real estate lead information from the following inquiry notes. Look for name, email, phone, budget (in EUR), location, and specific property requirements. \n\nINQUIRY NOTES:\n${content}`,
       config: {
         responseMimeType: "application/json",
@@ -157,7 +159,7 @@ export class GeminiService {
   async extractLeadsFromImage(base64: string, mimeType: string) {
     const ai = this.getClient();
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: {
         parts: [
           { inlineData: { data: base64, mimeType } },
@@ -205,7 +207,7 @@ export class GeminiService {
     5. Sales text for website with hook, 3 bullet points, and CTA.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: this.getContext(brand),
@@ -233,7 +235,7 @@ export class GeminiService {
     
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
+        model: 'gemini-2.0-flash-exp',
         contents: { parts },
         config: { imageConfig: { aspectRatio } }
       });
@@ -254,7 +256,7 @@ export class GeminiService {
     
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3-pro-preview",
+        model: "gemini-2.0-flash",
         contents: `Analyze email thread for "${lead.name}". \n\nTHREAD:\n${thread}`,
         config: {
           systemInstruction: this.getContext(),
@@ -283,7 +285,7 @@ export class GeminiService {
     const ai = this.getClient();
     const prompt = `Investment analysis for ${data.location}. Data: Price €${data.price}, Yield ${data.yield}%.`;
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: { systemInstruction: this.getContext(brand, profile) },
     });
@@ -294,7 +296,7 @@ export class GeminiService {
     const ai = this.getClient();
     const brand = settingsStore.getBrand(brandId);
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: `Generate ${contentType} about: ${topic}.`,
       config: { systemInstruction: this.getContext(brand) },
     });
@@ -421,7 +423,7 @@ Return ONLY valid JSON (no markdown fences) with these exact fields:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: this.getContext(brand, profile),

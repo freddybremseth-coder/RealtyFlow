@@ -120,7 +120,13 @@ const LiveAssistant: React.FC = () => {
     if (isActive || isConnecting) return;
     try {
       setIsConnecting(true);
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const geminiKey = settingsStore.getApiKeys().gemini;
+      if (!geminiKey) {
+        addLog("Mangler Gemini API-nøkkel. Gå til Innstillinger → AI-nøkler.", "info");
+        setIsConnecting(false);
+        return;
+      }
+      const ai = new GoogleGenAI({ apiKey: geminiKey });
       const profile = settingsStore.getProfile();
       
       const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });

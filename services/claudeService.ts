@@ -16,10 +16,9 @@ import { buildMarketDataPrompt, getAreaData, MARKET_DATA_UPDATED } from "./marke
 
 export class ClaudeService {
   private getClient() {
-    return new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-      dangerouslyAllowBrowser: true,
-    });
+    const apiKey = settingsStore.getApiKeys().anthropic;
+    if (!apiKey) throw new Error("Mangler Anthropic API-nøkkel. Gå til Innstillinger → AI-nøkler.");
+    return new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
   }
 
   private getContext(brand?: Brand, profile?: AdvisorProfile): string {
