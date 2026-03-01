@@ -210,20 +210,16 @@ const Inventory: React.FC = () => {
     setIsSyncingXml(true);
     setError(null);
     try {
-      // Try direct fetch first; fall back to CORS proxy if blocked
-      let text = '';
-      let fetchOk = false;
-      try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-        if (res.ok) { text = await res.text(); fetchOk = true; }
-      } catch { /* CORS or network – try proxy */ }
+      // Route through Supabase Edge Function (server-side, no CORS issues)
+      const PROXY = 'https://kkswlrpvpyczngemphse.supabase.co/functions/v1/proxy-fetch';
+      const ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtrc3dscnB2cHljem5nZW1waHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwODU3MTEsImV4cCI6MjA4NzY2MTcxMX0.xvhccZ82J4k7UxkPT8RMnWPT-6pAACIEfPWzui472yI';
 
-      if (!fetchOk) {
-        const proxy = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-        const res = await fetch(proxy, { signal: AbortSignal.timeout(30000) });
-        if (!res.ok) throw new Error(`HTTP ${res.status} via proxy – sjekk URL-en.`);
-        text = await res.text();
-      }
+      const res = await fetch(`${PROXY}?url=${encodeURIComponent(url)}`, {
+        headers: { Authorization: `Bearer ${ANON}` },
+        signal: AbortSignal.timeout(60000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} – sjekk at Edge Function er deployet i Supabase.`);
+      const text = await res.text();
 
       const lower = url.toLowerCase();
       if (lower.includes('.csv') || (!text.trimStart().startsWith('<') && text.includes(','))) {
