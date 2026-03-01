@@ -1,5 +1,6 @@
 
 import { Brand, AdvisorProfile, AutomationSettings, AppLanguage } from "../types";
+import { supabase } from "./supabase";
 
 const EMPTY_INTEGRATIONS = {
   facebookActive: false,
@@ -126,10 +127,39 @@ class SettingsService {
   }
 
   getApiKeys(): ApiKeys { return this.apiKeys; }
+
   updateApiKeys(keys: ApiKeys) {
     this.apiKeys = keys;
     localStorage.setItem('rf_api_keys', JSON.stringify(keys));
     this.notify();
+    // Synk til sky (fire-and-forget)
+    this.saveApiKeysToCloud(keys).catch(() => {});
+  }
+
+  async loadApiKeysFromCloud(): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('api_keys')
+      .eq('user_id', user.id)
+      .single();
+    if (!error && data?.api_keys) {
+      this.apiKeys = data.api_keys as ApiKeys;
+      localStorage.setItem('rf_api_keys', JSON.stringify(this.apiKeys));
+      this.notify();
+    }
+  }
+
+  async saveApiKeysToCloud(keys: ApiKeys): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from('user_settings')
+      .upsert(
+        { user_id: user.id, api_keys: keys, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      );
   }
 
   private save() {

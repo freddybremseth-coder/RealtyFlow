@@ -18,13 +18,21 @@ import Calendar from './pages/Calendar';
 import MarketingTasks from './pages/MarketingTasks';
 import { LeadScanner } from './components/LeadScanner';
 import { authStore } from './services/authService';
+import { settingsStore } from './services/settingsService';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(authStore.isAuthenticated());
 
   useEffect(() => {
+    // Last API-nøkler fra sky ved oppstart hvis innlogget
+    if (authStore.isAuthenticated()) {
+      settingsStore.loadApiKeysFromCloud().catch(() => {});
+    }
     return authStore.subscribe(() => {
-      setIsAuthenticated(authStore.isAuthenticated());
+      const auth = authStore.isAuthenticated();
+      setIsAuthenticated(auth);
+      // Last nøkler fra sky ved innlogging
+      if (auth) settingsStore.loadApiKeysFromCloud().catch(() => {});
     });
   }, []);
 
