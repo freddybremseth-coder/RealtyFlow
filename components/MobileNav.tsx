@@ -1,21 +1,24 @@
 
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Home, Mic, MoreHorizontal, X, Map, Rocket, FileText, Image as ImageIcon, Camera, Settings, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Home, Mic, MoreHorizontal, X, Map, Rocket, FileText, Image as ImageIcon, Camera, Settings, ClipboardList, CalendarDays, Megaphone, BookUser } from 'lucide-react';
 
 const PRIMARY_ITEMS = [
   { label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
   { label: 'Pipeline', icon: <Users size={20} />, path: '/pipeline' },
-  { label: 'Inventory', icon: <Home size={20} />, path: '/inventory' },
-  { label: 'Assistent', icon: <Mic size={20} />, path: '/assistant' },
+  { label: 'Kunder', icon: <BookUser size={20} />, path: '/crm' },
+  { label: 'Kalender', icon: <CalendarDays size={20} />, path: '/calendar' },
 ];
 
 const MORE_ITEMS = [
+  { label: 'Inventory', icon: <Home size={20} />, path: '/inventory' },
   { label: 'Verdivurdering', icon: <ClipboardList size={20} />, path: '/valuation' },
   { label: 'Market Pulse', icon: <Map size={20} />, path: '/market' },
   { label: 'Growth Hub', icon: <Rocket size={20} />, path: '/growth' },
+  { label: 'Markedsoppgaver', icon: <Megaphone size={20} />, path: '/marketing-tasks' },
   { label: 'Content Studio', icon: <FileText size={20} />, path: '/content' },
   { label: 'Image Studio', icon: <ImageIcon size={20} />, path: '/studio' },
+  { label: 'Assistent', icon: <Mic size={20} />, path: '/assistant' },
   { label: 'Lead Scanner', icon: <Camera size={20} />, path: '/scanner' },
   { label: 'Innstillinger', icon: <Settings size={20} />, path: '/settings' },
 ];

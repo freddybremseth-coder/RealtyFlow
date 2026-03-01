@@ -295,3 +295,103 @@ export interface SavedValuation {
   propertyData: PropertyValuationData;
   result: ValuationResult;
 }
+
+// ─── CRM / KUNDEKORT ─────────────────────────────────────────────────────────
+
+export enum CustomerStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  VIP = 'VIP',
+  CLOSED = 'CLOSED'
+}
+
+export enum CustomerType {
+  BUYER = 'BUYER',
+  SELLER = 'SELLER',
+  INVESTOR = 'INVESTOR',
+  RENTER = 'RENTER'
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  nationality?: string;
+  source?: string;
+  status: CustomerStatus;
+  type: CustomerType;
+  notes?: string;
+  imageUrl?: string;
+  brandId?: string;
+  leadId?: string;
+  propertiesInterested?: string[];
+  propertiesBought?: string[];
+  createdAt: string;
+  lastContact: string;
+  totalValue?: number;
+  tags?: string[];
+  budget?: number;
+  location?: string;
+}
+
+// ─── KALENDER / AVTALER ───────────────────────────────────────────────────────
+
+export enum AppointmentType {
+  VIEWING = 'VIEWING',
+  MEETING = 'MEETING',
+  CALL = 'CALL',
+  VALUATION = 'VALUATION',
+  SIGNING = 'SIGNING',
+  OTHER = 'OTHER'
+}
+
+export enum AppointmentStatus {
+  CONFIRMED = 'CONFIRMED',
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
+}
+
+export interface Appointment {
+  id: string;
+  title: string;
+  type: AppointmentType;
+  date: string;
+  time: string;
+  duration: number;
+  location?: string;
+  notes?: string;
+  status: AppointmentStatus;
+  leadId?: string;
+  customerId?: string;
+  propertyId?: string;
+  brandId?: string;
+  createdAt: string;
+  contactName?: string;
+  contactPhone?: string;
+}
+
+// ─── MARKEDSOPPGAVER ─────────────────────────────────────────────────────────
+
+export enum MarketingTaskStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  REVIEW = 'REVIEW',
+  DONE = 'DONE'
+}
+
+export type MarketingTaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface MarketingTask {
+  id: string;
+  title: string;
+  content?: string;
+  platform?: string;
+  status: MarketingTaskStatus;
+  priority: MarketingTaskPriority;
+  dueDate?: string;
+  brandId?: string;
+  createdAt: string;
+  tags?: string[];
+}

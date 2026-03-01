@@ -13,6 +13,9 @@ import Settings from './pages/Settings';
 import Inventory from './pages/Inventory';
 import Valuation from './pages/Valuation';
 import Login from './pages/Login';
+import CRM from './pages/CRM';
+import Calendar from './pages/Calendar';
+import MarketingTasks from './pages/MarketingTasks';
 import { LeadScanner } from './components/LeadScanner';
 import { authStore } from './services/authService';
 
@@ -56,6 +59,9 @@ const App: React.FC = () => {
                     <LeadScanner />
                   </div>
                 } />
+                <Route path="/crm" element={<CRM />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/marketing-tasks" element={<MarketingTasks />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

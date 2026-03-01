@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Map, Image as ImageIcon, FileText, Settings, Mic, Rocket, Home, Zap, MapPin, Database, CloudUpload, Camera, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Map, Image as ImageIcon, FileText, Settings, Mic, Rocket, Home, Zap, MapPin, Database, CloudUpload, Camera, ClipboardList, CalendarDays, Megaphone, BookUser } from 'lucide-react';
 import { isCloudConnected } from '../services/supabase';
 import { LogOut } from 'lucide-react';
 import { settingsStore } from '../services/settingsService';
@@ -23,17 +23,20 @@ const Sidebar: React.FC = () => {
   }, []);
 
   const NAVIGATION_ITEMS = [
-    { label: t.nav_dashboard, icon: <LayoutDashboard size={20} />, path: '/' },
-    { label: t.nav_pipeline, icon: <Users size={20} />, path: '/pipeline' },
-    { label: t.nav_inventory, icon: <Home size={20} />, path: '/inventory' },
-    { label: t.nav_valuation || 'Verdivurdering', icon: <ClipboardList size={20} />, path: '/valuation' },
-    { label: t.nav_market, icon: <Map size={20} />, path: '/market' },
-    { label: t.nav_growth, icon: <Rocket size={20} />, path: '/growth' },
-    { label: t.nav_content, icon: <FileText size={20} />, path: '/content' },
-    { label: t.nav_studio, icon: <ImageIcon size={20} />, path: '/studio' },
-    { label: t.nav_assistant, icon: <Mic size={20} />, path: '/assistant' },
-    { label: t.nav_scanner, icon: <Camera size={20} />, path: '/scanner' },
-    { label: t.nav_settings, icon: <Settings size={20} />, path: '/settings' },
+    { label: t.nav_dashboard, icon: <LayoutDashboard size={20} />, path: '/', group: 'core' },
+    { label: t.nav_pipeline, icon: <Users size={20} />, path: '/pipeline', group: 'core' },
+    { label: 'Kundekort', icon: <BookUser size={20} />, path: '/crm', group: 'core' },
+    { label: 'Kalender', icon: <CalendarDays size={20} />, path: '/calendar', group: 'core' },
+    { label: t.nav_inventory, icon: <Home size={20} />, path: '/inventory', group: 'core' },
+    { label: t.nav_valuation || 'Verdivurdering', icon: <ClipboardList size={20} />, path: '/valuation', group: 'tools' },
+    { label: t.nav_market, icon: <Map size={20} />, path: '/market', group: 'tools' },
+    { label: t.nav_growth, icon: <Rocket size={20} />, path: '/growth', group: 'marketing' },
+    { label: 'Markedsoppgaver', icon: <Megaphone size={20} />, path: '/marketing-tasks', group: 'marketing' },
+    { label: t.nav_content, icon: <FileText size={20} />, path: '/content', group: 'marketing' },
+    { label: t.nav_studio, icon: <ImageIcon size={20} />, path: '/studio', group: 'marketing' },
+    { label: t.nav_assistant, icon: <Mic size={20} />, path: '/assistant', group: 'ai' },
+    { label: t.nav_scanner, icon: <Camera size={20} />, path: '/scanner', group: 'ai' },
+    { label: t.nav_settings, icon: <Settings size={20} />, path: '/settings', group: 'ai' },
   ];
 
   const handleLogout = () => {
