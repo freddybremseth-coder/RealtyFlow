@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { gemini } from '../services/geminiService';
+import { gemini } from '../services/claudeService';
 import { FileText, Send, BookOpen, Mail, Sparkles, Copy, Check, Download, RefreshCw, Layout, MousePointer2, HardHat } from 'lucide-react';
 
 type ContentType = 'blog' | 'newsletter' | 'guide' | 'email' | 'presentation' | 'construction';

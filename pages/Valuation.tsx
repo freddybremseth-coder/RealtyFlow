@@ -7,7 +7,7 @@ import {
   BedDouble, Bath, Car, Sun, Eye, Thermometer, Leaf, BarChart3, Award,
   AlertCircle, Search, RefreshCw, ArrowRight, Clock, Euro
 } from 'lucide-react';
-import { gemini } from '../services/geminiService';
+import { gemini } from '../services/claudeService';
 import { valuationStore } from '../services/valuationService';
 import { settingsStore } from '../services/settingsService';
 import {

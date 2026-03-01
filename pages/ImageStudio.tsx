@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { gemini } from '../services/geminiService';
+import { gemini } from '../services/claudeService';
 import { Sparkles, Download, RefreshCcw, Image as ImageIcon, Wand2, Maximize2 } from 'lucide-react';
 
 const ImageStudio: React.FC = () => {

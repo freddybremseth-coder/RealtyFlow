@@ -4,7 +4,7 @@ import { leadStore } from '../services/leadService';
 import { COLORS } from '../constants';
 import { Lead, LeadStatus } from '../types';
 import LeadScoreRadar from '../components/LeadScoreRadar';
-import { gemini } from '../services/geminiService';
+import { gemini } from '../services/claudeService';
 import { isCloudConnected } from '../services/supabase';
 import { 
   TrendingUp, Users, Target, Activity, ArrowRight, Star, Sun, ChevronRight, 
