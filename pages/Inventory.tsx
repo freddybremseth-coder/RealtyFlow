@@ -2,13 +2,13 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { propertyStore } from '../services/propertyService';
 import { settingsStore } from '../services/settingsService';
-import { 
-  Home, Plus, Upload, Search, Check, 
-  MapPin, BedDouble, Bath, Ruler, 
-  Loader2, FileCode, AlertTriangle, Filter, X, 
-  Database, Info, Tag, Briefcase, Maximize2, 
+import {
+  Home, Plus, Upload, Search, Check,
+  MapPin, BedDouble, Bath, Ruler,
+  Loader2, FileCode, AlertTriangle, Filter, X,
+  Database, Info, Tag, Briefcase, Maximize2,
   Trees, Euro, ChevronLeft, ChevronRight, Share2, ClipboardList,
-  Download, Printer, Phone, Mail, Globe, User, Award, Zap
+  Download, Printer, Phone, Mail, Globe, User, Award, Zap, Link, FileText
 } from 'lucide-react';
 import { Property, Brand, AdvisorProfile } from '../types';
 
@@ -29,6 +29,8 @@ const Inventory: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [xmlUrl, setXmlUrl] = useState('');
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
 
   useEffect(() => {
     const unsubProperties = propertyStore.subscribe(() => setProperties(propertyStore.getProperties()));
@@ -136,18 +138,94 @@ const Inventory: React.FC = () => {
     setImportLog(`Vellykket! Importert ${total} boliger.`);
   };
 
-  const handleXmlFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const processCsvText = async (csvText: string) => {
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) throw new Error("CSV-filen mangler data.");
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/["\s]/g, ''));
+    const total = lines.length - 1;
+    setSyncProgress({ current: 0, total });
+    setImportLog('Starter CSV-import...');
+    const CHUNK = 25;
+    let chunk: Property[] = [];
+    for (let i = 1; i <= total; i++) {
+      const cols = lines[i].split(sep).map(c => c.replace(/^"|"$/g, '').trim());
+      const get = (...keys: string[]) => {
+        for (const k of keys) {
+          const idx = headers.indexOf(k);
+          if (idx !== -1 && cols[idx]) return cols[idx];
+        }
+        return '';
+      };
+      const price = parseFloat(get('price', 'pris', 'precio')) || 0;
+      if (!price && !get('title', 'tittel', 'name', 'navn')) continue;
+      const prop: Property = {
+        id: `csv-${Date.now()}-${i}`,
+        external_id: get('ref', 'id', 'external_id', 'referanse') || `CSV-${i}`,
+        title: get('title', 'tittel', 'name', 'navn') || `Eiendom ${i}`,
+        price,
+        location: get('location', 'city', 'by', 'lokasjon', 'place') || '',
+        bedrooms: parseInt(get('bedrooms', 'soverom', 'beds', 'habitaciones')) || 0,
+        bathrooms: parseInt(get('bathrooms', 'baderom', 'baths', 'banos')) || 0,
+        area: parseFloat(get('area', 'size', 'storrelse', 'm2', 'sqm')) || 0,
+        description: get('description', 'beskrivelse', 'details'),
+        imageUrl: get('imageurl', 'image', 'photo', 'bilde', 'img') || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400',
+        gallery: [],
+        developer: get('developer', 'builder', 'utbygger'),
+        propertyType: get('type', 'propertytype', 'type'),
+      } as Property;
+      chunk.push(prop);
+      if (chunk.length >= CHUNK || i === total) {
+        propertyStore.addChunk(chunk);
+        setSyncProgress({ current: i, total });
+        chunk = [];
+        await new Promise(r => setTimeout(r, 1));
+      }
+    }
+    setImportLog(`Vellykket! Importert ${total} boliger fra CSV.`);
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setIsSyncingXml(true);
     setError(null);
     const reader = new FileReader();
     reader.onload = async (e) => {
-      try { await processXmlIncremental(e.target?.result as string); }
+      try {
+        const text = e.target?.result as string;
+        if (file.name.endsWith('.csv')) await processCsvText(text);
+        else await processXmlIncremental(text);
+      }
       catch (err: any) { setError(err.message); }
       finally { setIsSyncingXml(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'utf-8');
+  };
+
+  const handleFetchFromUrl = async () => {
+    const url = xmlUrl.trim();
+    if (!url) return;
+    setIsFetchingUrl(true);
+    setIsSyncingXml(true);
+    setError(null);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Kunne ikke hente fra URL.`);
+      const text = await res.text();
+      const lower = url.toLowerCase();
+      if (lower.includes('.csv') || text.trimStart().startsWith('"') || (!text.trimStart().startsWith('<') && text.includes(','))) {
+        await processCsvText(text);
+      } else {
+        await processXmlIncremental(text);
+      }
+      setXmlUrl('');
+    } catch (err: any) {
+      setError(`URL-henting feilet: ${err.message}. Kontroller at serveren tillater CORS.`);
+    } finally {
+      setIsFetchingUrl(false);
+      setIsSyncingXml(false);
+    }
   };
 
   const intel = selectedProperty ? getLocationIntel(selectedProperty.location) : null;
@@ -165,11 +243,40 @@ const Inventory: React.FC = () => {
           <h1 className="text-4xl font-bold neon-text text-cyan-400 mb-2">Inventory HQ</h1>
           <p className="text-slate-400">Database: <span className="text-white font-bold">{properties.length}</span> boliger lagret lokalt.</p>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-           <input type="file" ref={fileInputRef} onChange={handleXmlFileChange} accept=".xml" className="hidden" />
-           <button onClick={() => fileInputRef.current?.click()} className="flex-1 md:flex-none px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20">
-            <Upload size={20} /> Last opp XML
-          </button>
+        <div className="flex flex-col gap-3 w-full md:w-auto">
+          {/* URL fetch row */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="url"
+                value={xmlUrl}
+                onChange={e => setXmlUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleFetchFromUrl()}
+                placeholder="https://eksempel.com/feed.xml  eller  .csv"
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-9 pr-4 py-3 text-sm text-slate-200 focus:border-cyan-500 outline-none placeholder:text-slate-600"
+              />
+            </div>
+            <button
+              onClick={handleFetchFromUrl}
+              disabled={!xmlUrl.trim() || isFetchingUrl || isSyncingXml}
+              className="px-5 py-3 bg-cyan-500 text-slate-950 rounded-2xl font-bold text-sm hover:bg-cyan-400 transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-cyan-500/20"
+            >
+              {isFetchingUrl ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Hent
+            </button>
+          </div>
+          {/* File upload row */}
+          <div className="flex gap-2">
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xml,.csv" className="hidden" />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isSyncingXml}
+              className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-40"
+            >
+              <Upload size={16} /> Last opp XML / CSV
+            </button>
+          </div>
         </div>
       </header>
 

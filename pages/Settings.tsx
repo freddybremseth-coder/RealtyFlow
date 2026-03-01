@@ -7,7 +7,7 @@ import {
   Facebook, Instagram, Linkedin, Youtube, Music2,
   Pencil, Star, MapPin
 } from 'lucide-react';
-import { settingsStore } from '../services/settingsService';
+import { settingsStore, ApiKeys } from '../services/settingsService';
 import { Brand, AdvisorProfile, AutomationSettings, IntegrationSettings, AppLanguage } from '../types';
 import { useTranslation } from '../services/i18n';
 
@@ -240,12 +240,14 @@ const Settings: React.FC = () => {
   const [lang, setLang] = useState(settingsStore.getLanguage());
   const t = useTranslation(lang);
 
-  const [activeTab, setActiveTab] = useState<'brands' | 'profile' | 'integrations' | 'system'>('brands');
+  const [activeTab, setActiveTab] = useState<'brands' | 'profile' | 'integrations' | 'ai' | 'system'>('brands');
   const [brands, setBrands] = useState<Brand[]>(settingsStore.getBrands());
   const [profile, setProfile] = useState<AdvisorProfile>(settingsStore.getProfile());
   const [automation, setAutomation] = useState<AutomationSettings>(settingsStore.getAutomation());
+  const [apiKeys, setApiKeys] = useState<ApiKeys>(settingsStore.getApiKeys());
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [apiKeysSaved, setApiKeysSaved] = useState(false);
   const [expertiseInput, setExpertiseInput] = useState('');
 
   const advisorFileRef = useRef<HTMLInputElement>(null);
@@ -255,6 +257,7 @@ const Settings: React.FC = () => {
       setBrands(settingsStore.getBrands());
       setProfile(settingsStore.getProfile());
       setAutomation(settingsStore.getAutomation());
+      setApiKeys(settingsStore.getApiKeys());
       setLang(settingsStore.getLanguage());
     });
     return unsub;
@@ -316,11 +319,19 @@ const Settings: React.FC = () => {
     setProfile(p => ({ ...p, expertise: p.expertise.filter(e => e !== item) }));
   };
 
+  const handleApiKeysSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    settingsStore.updateApiKeys(apiKeys);
+    setApiKeysSaved(true);
+    setTimeout(() => setApiKeysSaved(false), 2500);
+  };
+
   const TABS = [
-    { id: 'brands', label: t.st_brands || 'Merkevarer', icon: <Building2 size={16} /> },
-    { id: 'profile', label: t.st_advisor || 'Rådgiver', icon: <User size={16} /> },
-    { id: 'integrations', label: t.st_integrations || 'Integrasjoner', icon: <Link size={16} /> },
-    { id: 'system', label: t.st_system || 'System', icon: <Shield size={16} /> },
+    { id: 'brands',       label: t.st_brands || 'Selskaper',    icon: <Building2 size={16} /> },
+    { id: 'profile',      label: t.st_advisor || 'Rådgiver',    icon: <User size={16} /> },
+    { id: 'ai',           label: 'AI-nøkler',                   icon: <Key size={16} /> },
+    { id: 'integrations', label: t.st_integrations || 'Kanaler', icon: <Link size={16} /> },
+    { id: 'system',       label: t.st_system || 'System',       icon: <Shield size={16} /> },
   ];
 
   return (
@@ -555,6 +566,126 @@ const Settings: React.FC = () => {
             {profileSaved
               ? <><CheckCircle2 size={16} /> Lagret!</>
               : <><Save size={16} /> Lagre profil</>}
+          </button>
+        </form>
+      )}
+
+      {/* ══════════════ AI KEYS TAB ══════════════ */}
+      {activeTab === 'ai' && (
+        <form onSubmit={handleApiKeysSave} className="space-y-5 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+              <Key size={14} className="text-cyan-400" /> AI-leverandører
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Nøklene lagres kun lokalt i nettleseren din (localStorage) og sendes aldri til noen server.
+              De brukes direkte fra appen til å kalle AI-tjenestene.
+            </p>
+
+            {/* Claude / Anthropic */}
+            <div className="p-5 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <Zap size={16} className="text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-200">Anthropic Claude</p>
+                  <p className="text-[10px] text-slate-500">claude-opus-4, claude-sonnet-4 osv.</p>
+                </div>
+                {apiKeys.anthropic && (
+                  <span className="ml-auto text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 size={11} /> Konfigurert
+                  </span>
+                )}
+              </div>
+              <div>
+                <label className={lCls}>API-nøkkel</label>
+                <input
+                  className={iCls}
+                  type="password"
+                  value={apiKeys.anthropic}
+                  onChange={e => setApiKeys(k => ({ ...k, anthropic: e.target.value }))}
+                  placeholder="sk-ant-api03-..."
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+
+            {/* OpenAI */}
+            <div className="p-5 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                  <Zap size={16} className="text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-200">OpenAI</p>
+                  <p className="text-[10px] text-slate-500">GPT-4o, GPT-4o-mini, o1 osv.</p>
+                </div>
+                {apiKeys.openai && (
+                  <span className="ml-auto text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 size={11} /> Konfigurert
+                  </span>
+                )}
+              </div>
+              <div>
+                <label className={lCls}>API-nøkkel</label>
+                <input
+                  className={iCls}
+                  type="password"
+                  value={apiKeys.openai}
+                  onChange={e => setApiKeys(k => ({ ...k, openai: e.target.value }))}
+                  placeholder="sk-proj-..."
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+
+            {/* Gemini */}
+            <div className="p-5 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                  <Zap size={16} className="text-cyan-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-200">Google Gemini</p>
+                  <p className="text-[10px] text-slate-500">Gemini 2.5 Flash / Pro – brukes til stemmeassistent og bildeanalyse</p>
+                </div>
+                {apiKeys.gemini && (
+                  <span className="ml-auto text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 size={11} /> Konfigurert
+                  </span>
+                )}
+              </div>
+              <div>
+                <label className={lCls}>API-nøkkel</label>
+                <input
+                  className={iCls}
+                  type="password"
+                  value={apiKeys.gemini}
+                  onChange={e => setApiKeys(k => ({ ...k, gemini: e.target.value }))}
+                  placeholder="AIzaSy..."
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl">
+              <p className="text-[11px] text-amber-400/80 flex items-start gap-2">
+                <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+                Nøklene lagres i nettleserens localStorage. Ikke del disse med andre, og ikke bruk dem på delte datamaskiner.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className={`flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-sm transition-all ${
+              apiKeysSaved
+                ? 'bg-emerald-500 text-white'
+                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20'
+            }`}
+          >
+            {apiKeysSaved ? <><CheckCircle2 size={16} /> Lagret!</> : <><Save size={16} /> Lagre API-nøkler</>}
           </button>
         </form>
       )}

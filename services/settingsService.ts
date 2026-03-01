@@ -1,46 +1,52 @@
 
 import { Brand, AdvisorProfile, AutomationSettings, AppLanguage } from "../types";
 
+const EMPTY_INTEGRATIONS = {
+  facebookActive: false,
+  instagramActive: false,
+  linkedinActive: false,
+  tiktokActive: false,
+  youtubeActive: false,
+  pinterestActive: false,
+  emailSyncActive: false
+};
+
 const DEFAULT_BRANDS: Brand[] = [
-  { 
-    id: 'soleada', 
-    name: 'Soleada.no', 
-    type: 'Agency', 
-    description: 'Luxury International Agency', 
+  {
+    id: 'soleada',
+    name: 'Soleada.no',
+    type: 'Agency',
+    description: 'Luxury International Agency',
     tone: 'Professional, Trustworthy, Exclusive',
     email: 'info@soleada.no',
     phone: '+47 000 00 000',
     phone2: '+34 900 000 001',
     website: 'https://soleada.no',
-    integrations: { 
-      facebookActive: false, 
-      instagramActive: false, 
-      linkedinActive: false, 
-      tiktokActive: false,
-      youtubeActive: false,
-      pinterestActive: false,
-      emailSyncActive: false 
-    }
+    integrations: { ...EMPTY_INTEGRATIONS }
   },
-  { 
-    id: 'zeneco', 
-    name: 'Zen Eco Homes', 
-    type: 'Eiendomsmegler & Utbygger', 
-    description: 'Spesialist på nybygg og moderne kvalitetshjem i Costa Blanca og Costa Calida, Spania.', 
+  {
+    id: 'zeneco',
+    name: 'Zen Eco Homes',
+    type: 'Eiendomsmegler & Utbygger',
+    description: 'Spesialist på nybygg og moderne kvalitetshjem i Costa Blanca og Costa Calida, Spania.',
     tone: 'Sleek, Innovative, Precise, Trustworthy',
     email: 'freddy@zenecohomes.com',
     phone: '+47 960099965',
     phone2: '+34 900 000 002',
     website: 'https://zenecohomes.com',
-    integrations: { 
-      facebookActive: false, 
-      instagramActive: false, 
-      linkedinActive: false, 
-      tiktokActive: false,
-      youtubeActive: false,
-      pinterestActive: false,
-      emailSyncActive: false 
-    }
+    integrations: { ...EMPTY_INTEGRATIONS }
+  },
+  {
+    id: 'pinosoecolife',
+    name: 'Pinosoecolife.com',
+    type: 'Eco-Living',
+    description: 'Autentisk økoliv i innlandet – bærekraftige fincaer og tomter i Pinoso-regionen.',
+    tone: 'Authentic, Natural, Sustainable, Community',
+    email: 'info@pinosoecolife.com',
+    phone: '+47 960099965',
+    phone2: '+34 900 000 003',
+    website: 'https://pinosoecolife.com',
+    integrations: { ...EMPTY_INTEGRATIONS }
   }
 ];
 
@@ -63,16 +69,43 @@ const DEFAULT_AUTOMATION: AutomationSettings = {
   language: AppLanguage.NO
 };
 
+export interface ApiKeys {
+  anthropic: string;
+  openai: string;
+  gemini: string;
+}
+
+const DEFAULT_API_KEYS: ApiKeys = { anthropic: '', openai: '', gemini: '' };
+
 class SettingsService {
-  private brands: Brand[] = JSON.parse(localStorage.getItem('rf_brands') || JSON.stringify(DEFAULT_BRANDS));
+  private brands: Brand[];
   private profile: AdvisorProfile = JSON.parse(localStorage.getItem('rf_profile') || JSON.stringify(DEFAULT_PROFILE));
   private automation: AutomationSettings = JSON.parse(localStorage.getItem('rf_automation') || JSON.stringify(DEFAULT_AUTOMATION));
+  private apiKeys: ApiKeys = JSON.parse(localStorage.getItem('rf_api_keys') || JSON.stringify(DEFAULT_API_KEYS));
   private listeners: (() => void)[] = [];
+
+  constructor() {
+    // Load saved brands, then merge in any new defaults that don't exist yet
+    const saved: Brand[] = JSON.parse(localStorage.getItem('rf_brands') || '[]');
+    const merged = [...saved];
+    for (const def of DEFAULT_BRANDS) {
+      if (!merged.find(b => b.id === def.id)) merged.push(def);
+    }
+    this.brands = merged.length > 0 ? merged : DEFAULT_BRANDS;
+  }
 
   getBrands() { return this.brands; }
   getBrand(id: string) { return this.brands.find(b => b.id === id); }
   updateBrand(updatedBrand: Brand) {
     this.brands = this.brands.map(b => b.id === updatedBrand.id ? updatedBrand : b);
+    this.save();
+  }
+  addBrand(brand: Brand) {
+    this.brands = [...this.brands, brand];
+    this.save();
+  }
+  removeBrand(id: string) {
+    this.brands = this.brands.filter(b => b.id !== id);
     this.save();
   }
 
@@ -90,6 +123,13 @@ class SettingsService {
 
   getLanguage(): AppLanguage {
     return this.automation.language || AppLanguage.NO;
+  }
+
+  getApiKeys(): ApiKeys { return this.apiKeys; }
+  updateApiKeys(keys: ApiKeys) {
+    this.apiKeys = keys;
+    localStorage.setItem('rf_api_keys', JSON.stringify(keys));
+    this.notify();
   }
 
   private save() {
