@@ -1,78 +1,73 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Pipeline from './pages/Pipeline';
-import ImageStudio from './pages/ImageStudio';
-import MarketPulse from './pages/MarketPulse';
 import LiveAssistant from './components/LiveAssistant';
-import ContentCMS from './pages/ContentCMS';
-import GrowthHub from './pages/GrowthHub';
-import Settings from './pages/Settings';
-import Inventory from './pages/Inventory';
-import Valuation from './pages/Valuation';
-import Login from './pages/Login';
-import CRM from './pages/CRM';
-import Calendar from './pages/Calendar';
-import MarketingTasks from './pages/MarketingTasks';
-import { LeadScanner } from './components/LeadScanner';
 import { authStore } from './services/authService';
 import { settingsStore } from './services/settingsService';
+
+// Lazy load pages
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Pipeline = lazy(() => import('./pages/Pipeline'));
+const ImageStudio = lazy(() => import('./pages/ImageStudio'));
+const MarketPulse = lazy(() => import('./pages/MarketPulse'));
+const ContentCMS = lazy(() => import('./pages/ContentCMS'));
+const GrowthHub = lazy(() => import('./pages/GrowthHub'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Inventory = lazy(() => import('./pages/Inventory'));
+const Valuation = lazy(() => import('./pages/Valuation'));
+const Login = lazy(() => import('./pages/Login'));
+const CRM = lazy(() => import('./pages/CRM'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const MarketingTasks = lazy(() => import('./pages/MarketingTasks'));
+const ScannerPage = lazy(() => import('./pages/ScannerPage'));
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(authStore.isAuthenticated());
 
   useEffect(() => {
-    // Last API-nøkler fra sky ved oppstart hvis innlogget
     if (authStore.isAuthenticated()) {
-      settingsStore.loadApiKeysFromCloud().catch(() => {});
+      settingsStore.loadApiKeysFromCloud().catch(console.error);
     }
-    return authStore.subscribe(() => {
+    const unsubscribe = authStore.subscribe(() => {
       const auth = authStore.isAuthenticated();
       setIsAuthenticated(auth);
-      // Last nøkler fra sky ved innlogging
-      if (auth) settingsStore.loadApiKeysFromCloud().catch(() => {});
+      if (auth) settingsStore.loadApiKeysFromCloud().catch(console.error);
     });
+    return unsubscribe;
   }, []);
 
   return (
     <HashRouter>
       <Routes>
-        {/* Offentlige ruter */}
         <Route path="/login" element={
-          isAuthenticated ? <Navigate to="/" replace /> : <Login />
+          <Suspense fallback={<div>Loading...</div>}>
+            {isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+          </Suspense>
         } />
 
-        {/* Beskyttede ruter */}
         <Route path="/*" element={
           isAuthenticated ? (
             <Layout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/pipeline" element={<Pipeline />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/valuation" element={<Valuation />} />
-                <Route path="/market" element={<MarketPulse />} />
-                <Route path="/growth" element={<GrowthHub />} />
-                <Route path="/studio" element={<ImageStudio />} />
-                <Route path="/content" element={<ContentCMS />} />
-                <Route path="/assistant" element={<div className="w-full py-4 lg:py-8"><LiveAssistant /></div>} />
-                <Route path="/scanner" element={
-                  <div className="w-full p-6 lg:p-10 flex flex-col items-center justify-center min-h-[60vh] gap-6">
-                    <div className="text-center mb-4">
-                      <h2 className="text-2xl font-bold text-slate-100 mb-2">Lead Scanner</h2>
-                      <p className="text-slate-400 text-sm">Ta bilde av et leadskjema eller visittkort for å lagre det automatisk.</p>
-                    </div>
-                    <LeadScanner />
-                  </div>
-                } />
-                <Route path="/crm" element={<CRM />} />
-                <Route path="/calendar" element={<Calendar />} />
-                <Route path="/marketing-tasks" element={<MarketingTasks />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+              <Suspense fallback={<div className='flex-grow flex items-center justify-center'><div className='text-xl'>Loading...</div></div>}>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/pipeline" element={<Pipeline />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/valuation" element={<Valuation />} />
+                  <Route path="/market" element={<MarketPulse />} />
+                  <Route path="/growth" element={<GrowthHub />} />
+                  <Route path="/studio" element={<ImageStudio />} />
+                  <Route path="/content" element={<ContentCMS />} />
+                  <Route path="/assistant" element={<div className="w-full py-4 lg:py-8"><LiveAssistant /></div>} />
+                  <Route path="/scanner" element={<ScannerPage />} />
+                  <Route path="/crm" element={<CRM />} />
+                  <Route path="/calendar" element={<Calendar />} />
+                  <Route path="/marketing-tasks" element={<MarketingTasks />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
             </Layout>
           ) : (
             <Navigate to="/login" replace />

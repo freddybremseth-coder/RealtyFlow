@@ -3,6 +3,7 @@ import { Camera, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { gemini } from '../services/claudeService';
 import { leadStore } from '../services/leadService';
 import { LeadStatus } from '../types';
+import './LeadScanner.css';
 
 export const LeadScanner = () => {
   const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
@@ -19,7 +20,10 @@ export const LeadScanner = () => {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         try {
-          const base64 = (ev.target?.result as string).split(',')[1];
+          if (!ev.target?.result) {
+            throw new Error("Kunne ikke lese filen.");
+          }
+          const base64 = (ev.target.result as string).split(',')[1];
           const extracted = await gemini.extractLeadsFromImage(base64, file.type);
 
           if (!extracted || extracted.length === 0) {
@@ -51,12 +55,19 @@ export const LeadScanner = () => {
           setMessage(`${extracted.length} lead${extracted.length > 1 ? 's' : ''} lagret!`);
           setTimeout(() => setStatus('idle'), 3000);
         } catch (err: any) {
+          console.error("Feil under AI-analyse:", err);
           setStatus('error');
           setMessage(err.message || 'AI-analyse feilet.');
         }
       };
+      reader.onerror = () => {
+        console.error("Feil ved lesing av fil.");
+        setStatus('error');
+        setMessage('Kunne ikke lese bildet.');
+      }
       reader.readAsDataURL(file);
     } catch (error: any) {
+      console.error("Feil ved filopplasting:", error);
       setStatus('error');
       setMessage(error.message || 'Kunne ikke lese bildet.');
     }
@@ -64,6 +75,15 @@ export const LeadScanner = () => {
     // Reset input so same file can be re-selected
     e.target.value = '';
   };
+
+  const getButtonClass = () => {
+    switch (status) {
+      case 'uploading': return 'uploading';
+      case 'success': return 'success';
+      case 'error': return 'error';
+      default: return 'idle';
+    }
+  }
 
   return (
     <div className="relative">
@@ -77,18 +97,12 @@ export const LeadScanner = () => {
       />
 
       <button
-        className={`
-          flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold transition-all border
-          ${status === 'idle' ? 'bg-[#00D9FF]/10 border-[#00D9FF] text-[#00D9FF] hover:bg-[#00D9FF]/20' : ''}
-          ${status === 'uploading' ? 'bg-[#FFBE0B]/10 border-[#FFBE0B] text-[#FFBE0B]' : ''}
-          ${status === 'success' ? 'bg-green-500/10 border-green-500 text-green-500' : ''}
-          ${status === 'error' ? 'bg-[#FF006E]/10 border-[#FF006E] text-[#FF006E]' : ''}
-        `}
+        className={`lead-scanner-button ${getButtonClass()}`}
       >
-        {status === 'idle' && <><Camera className="w-5 h-5" /> SCAN LEAD FORM</>}
-        {status === 'uploading' && <><Loader2 className="w-5 h-5 animate-spin" /> {message}</>}
-        {status === 'success' && <><CheckCircle className="w-5 h-5" /> {message}</>}
-        {status === 'error' && <><AlertTriangle className="w-5 h-5" /> {message}</>}
+        {status === 'idle' && <><Camera className="icon" /> SCAN LEAD FORM</>}
+        {status === 'uploading' && <><Loader2 className="icon animate-spin" /> {message}</>}
+        {status === 'success' && <><CheckCircle className="icon" /> {message}</>}
+        {status === 'error' && <><AlertTriangle className="icon" /> {message}</>}
       </button>
     </div>
   );
