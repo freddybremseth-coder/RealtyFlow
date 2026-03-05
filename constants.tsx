@@ -16,7 +16,10 @@ export const COLORS = {
 export const BRANDS = [
   { id: 'soleada', name: 'Soleada.no', type: 'Agency' },
   { id: 'zeneco', name: 'Zen Eco Homes', type: 'Development' },
-  { id: 'pinoso', name: 'Pinoso Eco Life', type: 'Eco-Living' }
+  { id: 'pinoso', name: 'Pinoso Eco Life', type: 'Eco-Living' },
+  { id: 'chatgenius', name: 'Chatgenius.pro', type: 'Tech' },
+  { id: 'freddybremseth', name: 'FreddyBremseth.com', type: 'Personal' },
+  { id: 'donaanna', name: 'DonaAnna.com', type: 'Hospitality' }
 ];
 
 export const NAVIGATION_ITEMS = [
@@ -26,8 +29,6 @@ export const NAVIGATION_ITEMS = [
   { label: 'Verdivurdering', icon: <ClipboardList size={20} />, path: '/valuation' },
   { label: 'Market Pulse', icon: <Map size={20} />, path: '/market' },
   { label: 'Growth Hub', icon: <Rocket size={20} />, path: '/growth' },
-  { label: 'Content Studio', icon: <FileText size={20} />, path: '/content' },
-  { label: 'Image Studio', icon: <ImageIcon size={20} />, path: '/studio' },
   { label: 'Assistant', icon: <Mic size={20} />, path: '/assistant' },
   { label: 'Lead Scanner', icon: <Camera size={20} />, path: '/scanner' },
   { label: 'Settings', icon: <Settings size={20} />, path: '/settings' },

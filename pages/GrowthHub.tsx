@@ -8,6 +8,7 @@ import { marketStore } from '../services/marketService';
 import { propertyStore } from '../services/propertyService';
 import { settingsStore } from '../services/settingsService';
 import { campaignStore, MarketingCampaign } from '../services/campaignService';
+import { supabase } from '../services/supabase'; // Importerer Supabase client
 import { BRANDS } from '../constants';
 import { 
    Rocket, Share2, Target, Zap, Instagram, Facebook, 
@@ -194,19 +195,30 @@ const GrowthHub: React.FC = () => {
     }
   };
 
-  const handlePublish = async () => {
-    if (!brandData?.integrations?.facebookActive) {
-      alert("Facebook-integrasjon er ikke aktiv. Gå til Settings for å aktivere den.");
-      return;
-    }
-    setIsPublishing(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      alert("Kampanje publisert til Facebook Ads Manager!");
-    } finally {
-      setIsPublishing(false);
-    }
-  };
+    const handlePublishArticle = async (content: string, title: string, category: 'guide' | 'blog_post' | 'market_pulse') => {
+        if (!content) return;
+        setIsPublishing(true);
+        try {
+            const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            const { error } = await supabase.from('articles').insert([{
+                title: title,
+                slug: `${slug}-${new Date().getTime()}`, // Sikrer unik slug
+                content_markdown: content,
+                category: category,
+                status: 'published',
+                target_brands: [selectedBrandId]
+            }]);
+
+            if (error) throw error;
+
+            alert(`'${title}' er publisert!`);
+        } catch (error) {
+            console.error('Publiseringsfeil:', error);
+            alert('En feil oppstod under publisering.');
+        } finally {
+            setIsPublishing(false);
+        }
+    };
 
   const toggleAutomation = (key: keyof AutomationSettings) => {
     const updated = { ...automation, [key]: !automation[key] };
@@ -462,12 +474,12 @@ const GrowthHub: React.FC = () => {
                             Lagre i bibliotek for gjenbruk
                         </button>
                         <button 
-                          onClick={handlePublish}
+                          onClick={() => handlePublishArticle(adResult.bodyOptions[0], selectedHeadline || 'Ny Kampanje', 'blog_post')}
                           disabled={isPublishing || !generatedImage || !selectedHeadline}
                           className="w-full py-5 bg-emerald-500 text-slate-950 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-emerald-400 shadow-2xl shadow-emerald-500/30 transition-all active:scale-95"
                         >
                             {isPublishing ? <Loader2 className="animate-spin" size={24} /> : <Send size={24} />}
-                            Launch Campaign Now
+                            Publiser Kampanje
                         </button>
                     </div>
                   </div>
@@ -594,10 +606,20 @@ const GrowthHub: React.FC = () => {
                   <div className="glass p-12 lg:p-20 rounded-[4rem] border border-slate-800 bg-[#0a0a0c] shadow-3xl animate-in slide-in-from-bottom-6">
                      <div className="flex justify-between items-center mb-12 border-b border-slate-800 pb-10">
                         <h2 className="text-3xl font-bold text-white uppercase tracking-tighter">Strategisk Kjøperguide</h2>
-                        <button onClick={() => {
-                          navigator.clipboard.writeText(zenGuide);
-                          alert("Guiden er kopiert til utklippstavlen.");
-                        }} className="px-8 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-2 transition-all"><Copy size={16}/> Kopier Innhold</button>
+                        <div className="flex gap-4">
+                           <button onClick={() => {
+                             navigator.clipboard.writeText(zenGuide);
+                             alert("Guiden er kopiert til utklippstavlen.");
+                           }} className="px-8 py-4 bg-slate-900 border border-slate-800 rounded-2xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-2 transition-all"><Copy size={16}/> Kopier Innhold</button>
+                           <button 
+                                onClick={() => handlePublishArticle(zenGuide, 'Strategisk Kjøperguide for Costa Blanca', 'guide')}
+                                disabled={isPublishing}
+                                className="px-8 py-4 bg-emerald-500 text-slate-950 rounded-2xl font-bold flex items-center gap-3 hover:bg-emerald-400 shadow-lg shadow-emerald-500/20"
+                            >
+                               {isPublishing ? <Loader2 className="animate-spin" /> : <Send />}
+                               Publiser
+                           </button>
+                        </div>
                      </div>
                      <div className="prose prose-invert max-w-none 
                         prose-h2:text-white prose-h2:border-l-4 prose-h2:border-emerald-500 prose-h2:pl-6
