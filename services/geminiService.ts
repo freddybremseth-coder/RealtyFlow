@@ -2,7 +2,7 @@
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { LeadStatus, Lead, Property, MarketTheme, Brand, AdvisorProfile, EmailMessage, BrandVisualStyles, AppLanguage, PropertyValuationData, ValuationResult } from "../types";
 import { settingsStore } from "./settingsService";
-import { buildMarketDataPrompt, getAreaData, MARKET_DATA_UPDATED } from "./marketData";
+import { getAreaData, MARKET_DATA_UPDATED } from "./marketData";
 
 export class GeminiService {
   private getContext(brand?: Brand, profile?: AdvisorProfile) {
@@ -303,13 +303,7 @@ export class GeminiService {
     const brand = settingsStore.getBrand(brandId);
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
-      contents: `Skriv ${contentType} om: ${topic}.
-
-OBLIGATORISKE FORMATERINGSKRAV:
-- Bruk IKKE markdown-formatering. Ingen **, *, #, ##, ___, ---, eller andre markdown-tegn.
-- Norsk setningskapitalisering: stor bokstav KUN i starten av setninger, og for egennavn/stedsnavn (f.eks. Spania, Benidorm, Middelhavet, Costa Blanca). IKKE tittelkapitalisering.
-- Skriv overskrifter som vanlige setninger med stor bokstav kun i starten.
-- Skill avsnitt med tom linje. Bruk ikke punktlister med stjerner eller bindestrek.`,
+      contents: `Skriv ${contentType} om: ${topic}.\n\nOBLIGATORISKE FORMATERINGSKRAV:\n- Bruk IKKE markdown-formatering. Ingen **, *, #, ##, ___, ---, eller andre markdown-tegn.\n- Norsk setningskapitalisering: stor bokstav KUN i starten av setninger, og for egennavn/stedsnavn (f.eks. Spania, Benidorm, Middelhavet, Costa Blanca). IKKE tittelkapitalisering.\n- Skriv overskrifter som vanlige setninger med stor bokstav kun i starten.\n- Skill avsnitt med tom linje. Bruk ikke punktlister med stjerner eller bindestrek.`,
       config: { systemInstruction: this.getContext(brand) },
     });
     return response.text || '';
@@ -325,23 +319,14 @@ OBLIGATORISKE FORMATERINGSKRAV:
         ).join('\n')
       : 'Ingen sammenlignbare eiendommer er lagt inn manuelt.';
 
-    // Slå opp lokal markedsdata for det aktuelle kommunenavnet
     const localAreaData = getAreaData(data.municipality);
     const localDataNote = localAreaData
-      ? `LOKAL MARKEDSDATA FOR ${data.municipality.toUpperCase()} (fra RealtyFlow-database, oppdatert ${MARKET_DATA_UPDATED}):
-– Prisantydning (Idealista): ${localAreaData.askingPricePerSqm.toLocaleString()} €/m²
-– Transaksjonspris (faktisk betalt): ${localAreaData.transactionPricePerSqm.toLocaleString()} €/m²
-– Prisvekst siste år: ${localAreaData.yoyChangePct != null ? `+${localAreaData.yoyChangePct}%` : 'ikke tilgjengelig'}
-– Trend: ${localAreaData.trend}
-– Snitt dager på markedet: ${localAreaData.avgDaysOnMarket ?? 'ikke tilgjengelig'}
-– Region: ${localAreaData.region}
-${localAreaData.notes ? `– Merknad: ${localAreaData.notes}` : ''}`
-      : `Kommunen "${data.municipality}" er ikke i vår lokale database. Bruk referansetabellen nedenfor og Google Search.`;
+      ? `LOKAL MARKEDSDATA FOR ${data.municipality.toUpperCase()} (fra RealtyFlow-database, oppdatert ${MARKET_DATA_UPDATED}):\n– Prisantydning (Idealista): ${localAreaData.askingPricePerSqm.toLocaleString()} €/m²\n– Transaksjonspris (faktisk betalt): ${localAreaData.transactionPricePerSqm.toLocaleString()} €/m²\n– Prisvekst siste år: ${localAreaData.yoyChangePct != null ? `+${localAreaData.yoyChangePct}%` : 'ikke tilgjengelig'}\n– Trend: ${localAreaData.trend}\n– Snitt dager på markedet: ${localAreaData.avgDaysOnMarket ?? 'ikke tilgjengelig'}\n– Region: ${localAreaData.region}\n${localAreaData.notes ? `– Merknad: ${localAreaData.notes}` : ''}`
+      : `Kommunen "${data.municipality}" er ikke i vår lokale database. Bruk Google Search for ferske data.`;
 
     const prompt = `
-Du er en Senior Eiendomsrådgiver for Soleada.no – et norsk eiendomsmeglerfirma spesialisert på spanske eiendommer på Costa Blanca og Costa Calida.
-
 Du skal nå lage en KOMPLETT, PROFESJONELL VERDIVURDERING på norsk for følgende eiendom.
+Din rolle er Senior Eiendomsrådgiver for ${brand.name}.
 
 ═══════════════════════════════════════════
 EIENDOMSDATA
@@ -355,69 +340,58 @@ Type: ${data.propertyType}
 Byggeår: ${data.yearBuilt || 'Ukjent'}
 ${data.lastRenovated ? `Sist renovert: ${data.lastRenovated}` : ''}
 Tilstand: ${data.condition}
-Energikarakter: ${data.energyRating}
 
 Boareal: ${data.builtArea} m²
-${data.usefulArea ? `Nyttig areal: ${data.usefulArea} m²` : ''}
-${data.plotSize ? `Tomtestørrelse: ${data.plotSize} m²` : ''}
-${data.terraceSize ? `Terrasse/balkong: ${data.terraceSize} m²` : ''}
-${data.floor ? `Etasje: ${data.floor} av ${data.totalFloors || '?'}` : ''}
-
 Soverom: ${data.bedrooms} | Baderom: ${data.bathrooms}
-${data.extraRooms ? `Ekstra rom: ${data.extraRooms}` : ''}
 
-Basseng: ${data.pool}
-Garasje: ${data.garage ? `Ja (${data.parkingSpaces} plass)` : 'Nei'}
-Heis: ${data.hasLift ? 'Ja' : 'Nei'}
-Klimaanlegg: ${data.hasAirConditioning ? 'Ja' : 'Nei'}
-Solcellepaneler: ${data.hasSolarPanels ? 'Ja' : 'Nei'}
-Bodrom: ${data.hasStorageRoom ? 'Ja' : 'Nei'}
-${data.hasCommunityFees ? `Felleskostnader: €${data.communityFees}/mnd` : ''}
-${data.propertyTax ? `IBI (eiendomsskatt): €${data.propertyTax}/år` : ''}
-
-Orientering: ${data.orientation}
-Utsikt: ${data.view}
+Kvaliteter:
+- Utsikt: ${data.view}
+- Orientering: ${data.orientation}
+- Basseng: ${data.pool}
+- Garasje: ${data.garage ? `Ja (${data.parkingSpaces} plass)` : 'Nei'}
+- Heis: ${data.hasLift ? 'Ja' : 'Nei'}
 
 EIERS ØNSKEDE PRIS: ${data.ownerAskingPrice ? `€${data.ownerAskingPrice.toLocaleString()}` : 'Ikke oppgitt'}
 
 ═══════════════════════════════════════════
-MARKEDSDATA FOR OMRÅDET
-═══════════════════════════════════════════
-Rådgivers oppgitte kvm-pris for ${data.municipality}: ${data.avgPricePerSqmArea ? `€${data.avgPricePerSqmArea}/m²` : 'Ikke oppgitt – bruk lokal data og referansetabell nedenfor'}
-
-${localDataNote}
-
-Sammenlignbare eiendommer (lagt inn av rådgiver):
-${comparablesText}
-
-${buildMarketDataPrompt()}
-
-═══════════════════════════════════════════
 RÅDGIVERENS NOTATER FRA VISNING
 ═══════════════════════════════════════════
-NOTATER: ${data.agentNotes || 'Ingen spesifikke notater.'}
 STYRKER: ${data.agentStrengths || 'Ikke spesifisert.'}
 SVAKHETER: ${data.agentWeaknesses || 'Ikke spesifisert.'}
+NOTATER: ${data.agentNotes || 'Ingen spesifikke notater.'}
 
 ═══════════════════════════════════════════
-SOLEADA.NO – STANDARD INFORMASJON
+INSTRUKSJONER FOR VERDIVURDERING
 ═══════════════════════════════════════════
-Meglerforetaket Soleada.no er et norskeid eiendomsmeglerfirma med base i Spania.
-Kommisjon: 3,5% av salgspris (ingen salg = ingen betaling, ingen oppstartsgebyr).
-Kontrakt: Eksklusivt salgsoppdrag på 3-6 måneder.
-Tjenester inkludert: Profesjonell fotografering, 3D-tur/video, internasjonal annonsering
-(Idealista, Fotocasa, Kyero, Rightmove, Soleada.no), sosiale medier på 6 språk,
-direkte markedsføring mot norske, tyske og britiske kjøpere, juridisk koordinering,
-NIE-assistanse, gratis kjøperveiledning, alltid tilgjengelig rådgiver.
+Din oppgave er å lage en nøyaktig og datadrevet verdivurdering. Følg disse stegene:
+
+1.  **FINN BASISPRIS:**
+    - Bruk Google Search til å finne den gjennomsnittlige kvadratmeterprisen for en ${data.propertyType} i ${data.municipality}.
+    - **Søk spesifikt etter "precio metro cuadrado ${data.propertyType} ${data.municipality} idealista informe de precios".**
+    - Denne prisen fra Idealistas prisrapport er ditt viktigste utgangspunkt (basispris).
+
+2.  **JUSTER FOR EGENSKAPER:**
+    - Juster basisprisen opp eller ned basert på eiendommens unike egenskaper:
+    - **Areal-korrigering:** Prisen per kvadratmeter er ofte *lavere* for store eiendommer og *høyere* for små eiendommer sammenlignet med gjennomsnittet i området. Du MÅ korrigere for dette avviket.
+    - **Tilstand & Alder:** Nyere og totalrenoverte eiendommer har høyere verdi. Eldre eiendommer i dårlig stand trekker ned.
+    - **Kvaliteter:** Utsikt, orientering, basseng, heis, garasje, og energinivå er viktige faktorer.
+    - **Styrker/Svakheter:** Bruk rådgiverens notater aktivt for å finjustere.
+
+3.  **BRUK REFERANSER (valgfritt):**
+    - Rådgiveren har lagt inn følgende referansepunkter. Bruk dem kun til å validere din vurdering, men la Idealista-basisprisen være førende.
+    - Manuelle referanser:
+      ${comparablesText}
+    - Intern database:
+      ${localDataNote}
+
+4.  **KONKLUDER OG SKRIV RAPPORT:**
+    - Basert på din analyse, fastsett et prisestimat (lav, midt, høy) og en anbefalt prisantydning.
+    - Generer en KOMPLETT og PROFESJONELL verdivurderingsrapport på norsk.
+    - Skriv som en seniorrådgiver – analytisk, presis, varm og overbevisende.
 
 ═══════════════════════════════════════════
-INSTRUKSJONER FOR RAPPORTEN
+INSTRUKSJONER FOR JSON-OUTPUT
 ═══════════════════════════════════════════
-Generer en KOMPLETT og PROFESJONELL verdivurdering på norsk.
-Bruk Google Search til å finne aktuelle Idealista-priser for ${data.municipality} hvis kvm-pris mangler.
-Bruk ekte talldata fra markedet. Vær analytisk og presis.
-Skriv som en seniorvurdering – profesjonell, varm og overbevisende.
-
 Return ONLY valid JSON (no markdown fences) with these exact fields:
 {
   "estimatedLow": number (EUR),
@@ -426,11 +400,11 @@ Return ONLY valid JSON (no markdown fences) with these exact fields:
   "recommendedListingPrice": number (EUR),
   "pricePerSqm": number (EUR/m²),
   "marketPositioning": "string (1-2 sentences on how to position in market)",
-  "thankYouLetter": "string (warm personal letter to owner in Norwegian, 150-200 words, from ${profile.name} at Soleada.no, referencing visit date and specific property)",
+  "thankYouLetter": "string (warm personal letter to owner in Norwegian, 150-200 words, from ${profile.name} at ${brand.name}, referencing visit date and specific property)",
   "propertyDescription": "string (rich professional property description in Norwegian, 200-300 words, highlighting best features from agent notes)",
-  "marketAnalysis": "string (market analysis for the area in Norwegian, 200-300 words, with specific price data, trends, comparable data)",
+  "marketAnalysis": "string (market analysis for the area in Norwegian, 200-300 words, with specific price data from Idealista, trends, and your adjustments)",
   "salesStrategy": "string (specific sales strategy for THIS property in Norwegian, 200-300 words, who the target buyer is, which channels, timing)",
-  "fullReportMarkdown": "string (complete formatted markdown report in Norwegian with ALL sections: ## 1. Takk for visningen, ## 2. Om eiendommen, ## 3. Markedsanalyse, ## 4. Verdivurdering, ## 5. Vår salgsstrategi, ## 6. Om Soleada.no, ## 7. Kommisjon og tilbud, ## 8. Neste steg)"
+  "fullReportMarkdown": "string (complete formatted markdown report in Norwegian with ALL sections: ## 1. Takk for visningen, ## 2. Om eiendommen, ## 3. Markedsanalyse, ## 4. Verdivurdering, ## 5. Vår salgsstrategi, ## 6. Om ${brand.name}, ## 7. Kommisjon og tilbud, ## 8. Neste steg)"
 }
 `;
 
