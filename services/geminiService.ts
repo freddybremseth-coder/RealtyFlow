@@ -68,7 +68,33 @@ export class GeminiService {
 
   async getMarketPulse(location: string, theme: MarketTheme = MarketTheme.GENERAL, brand?: Brand, profile?: AdvisorProfile) {
     const ai = this.getClient();
-    const prompt = `Create a comprehensive market analysis for ${location}. Theme: ${theme.toUpperCase()}. Include specific info about Costa Blanca and Costa Calida. Analyze from an investor and advisor perspective.`;
+    
+    const prompt = `
+      INSTRUCTIONS FOR MARKET PULSE REPORT:
+      You are a professional real estate analyst. Your task is to generate a highly accurate and well-sourced market pulse report for ${location}, with a special focus on Costa Blanca and Costa Calida. The theme is ${theme.toUpperCase()}.
+
+      CRITICAL REQUIREMENTS:
+      1.  **SOURCE HIERARCHY:** You MUST prioritize information from the most reliable sources in this specific order:
+          a.  **Official Statistics:** Instituto Nacional de Estadística (INE), Registradores de España.
+          b.  **Major Real Estate Portals:** Price reports from Idealista.com, Fotocasa.es.
+          c.  **Reputable Financial News:** Expansión, Cinco Días, El Economista (for Spanish news), Bloomberg, Reuters (for international context).
+          d.  **Bank Reports:** CaixaBank Research, BBVA Research, etc.
+
+      2.  **DATA-DRIVEN ANALYSIS:** The report must be built on hard data. Focus on:
+          - Average price per square meter (€/m²).
+          - Year-over-year (YoY) and quarter-over-quarter (QoQ) price changes.
+          - Sales volume trends.
+          - Average time on market.
+          - Future market outlook based on expert opinions from your sources.
+
+      3.  **STRUCTURE:**
+          - **Executive Summary:** Start with a 2-3 sentence summary of the current market state.
+          - **Key Data Points:** A bulleted list of the most important metrics (price, sales volume, etc.) with the source cited for each point.
+          - **Market Trend Analysis:** A paragraph explaining the *meaning* behind the data. Is the market heating up, cooling down? Why?
+          - **Outlook:** A brief forward-looking statement.
+
+      4.  **CITE EVERYTHING:** Every specific data point must be traceable to its source. Your analysis MUST be based on what the Google Search tool finds and returns. Never invent data.
+    `;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
