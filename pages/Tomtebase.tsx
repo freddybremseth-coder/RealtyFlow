@@ -70,7 +70,7 @@ const MapUpdater: React.FC<{ plot: Plot | undefined }> = ({ plot }) => {
     const map = useMap();
     useEffect(() => {
         if (plot) {
-            map.flyTo([plot.location.lat, plot.location.lng], 14);
+            map.setView([plot.location.lat, plot.location.lng], 14, { animate: false });
         }
     }, [plot, map]);
     return null;
