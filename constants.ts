@@ -1,5 +1,5 @@
 
-import { Lead, LeadStatus } from './types';
+import { Lead, LeadStatus, Brand } from './types';
 
 export const COLORS = {
   primary: '#06b6d4',
@@ -24,4 +24,53 @@ export const MOCK_LEADS: Lead[] = [
     intent: 0.7,
     lastActivity: '2023-10-27T10:00:00Z',
   },
+];
+
+const EMPTY_INTEGRATIONS = {
+  facebookActive: false,
+  instagramActive: false,
+  linkedinActive: false,
+  tiktokActive: false,
+  youtubeActive: false,
+  pinterestActive: false,
+  emailSyncActive: false
+};
+
+export const BRANDS: Brand[] = [
+  {
+    id: 'soleada',
+    name: 'Soleada.no',
+    type: 'Agency',
+    description: 'Luxury International Agency',
+    tone: 'Professional, Trustworthy, Exclusive',
+    email: 'info@soleada.no',
+    phone: '+47 000 00 000',
+    phone2: '+34 900 000 001',
+    website: 'https://soleada.no',
+    integrations: { ...EMPTY_INTEGRATIONS }
+  },
+  {
+    id: 'zeneco',
+    name: 'Zen Eco Homes',
+    type: 'Eiendomsmegler & Utbygger',
+    description: 'Spesialist på nybygg og moderne kvalitetshjem i Costa Blanca og Costa Calida, Spania.',
+    tone: 'Sleek, Innovative, Precise, Trustworthy',
+    email: 'freddy@zenecohomes.com',
+    phone: '+47 960099965',
+    phone2: '+34 900 000 002',
+    website: 'https://zenecohomes.com',
+    integrations: { ...EMPTY_INTEGRATIONS }
+  },
+  {
+    id: 'pinosoecolife',
+    name: 'Pinosoecolife.com',
+    type: 'Eco-Living',
+    description: 'Autentisk økoliv i innlandet – bærekraftige fincaer og tomter i Pinoso-regionen.',
+    tone: 'Authentic, Natural, Sustainable, Community',
+    email: 'info@pinosoecolife.com',
+    phone: '+47 960099965',
+    phone2: '+34 900 000 003',
+    website: 'https://pinosoecolife.com',
+    integrations: { ...EMPTY_INTEGRATIONS }
+  }
 ];
