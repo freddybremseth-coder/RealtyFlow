@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Customer, CustomerStatus, CustomerType } from '../types';
 import { crmStore } from '../services/crmService';
+import LeadImporter from '../components/LeadImporter';
 import {
   Users, Plus, X, Search, Phone, Mail, Star, TrendingUp,
   Euro, MapPin, Tag, Loader2, UserCheck, Building2, Home,
-  Briefcase, Filter, ChevronRight, Edit3, Trash2, CalendarDays
+  Briefcase, Filter, ChevronRight, Edit3, Trash2, CalendarDays, Upload
 } from 'lucide-react';
 
 const STATUS_CONFIG: Record<CustomerStatus, { label: string; color: string; bg: string }> = {
@@ -32,6 +33,7 @@ const CRM: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>(crmStore.getCustomers());
   const [selected, setSelected] = useState<Customer | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImporterOpen, setIsImporterOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | CustomerStatus>('all');
@@ -39,7 +41,8 @@ const CRM: React.FC = () => {
   const [form, setForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
-    return crmStore.subscribe(() => setCustomers(crmStore.getCustomers()));
+    const unsub = crmStore.subscribe(() => setCustomers(crmStore.getCustomers()));
+    return unsub;
   }, []);
 
   const filtered = customers.filter(c => {
@@ -94,18 +97,28 @@ const CRM: React.FC = () => {
 
   return (
     <div className="space-y-6 lg:space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
+      <LeadImporter isOpen={isImporterOpen} onClose={() => setIsImporterOpen(false)} />
+
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 px-1">
         <div>
           <h1 className="text-2xl sm:text-4xl font-bold neon-text text-cyan-400">Kundekort</h1>
           <p className="text-slate-400 text-xs mt-1">{stats.total} kunder · {stats.vip} VIP · €{(stats.totalVal / 1000000).toFixed(1)}M portefølje</p>
         </div>
-        <button
-          onClick={() => setIsFormOpen(true)}
-          className="px-6 py-3 bg-cyan-500 text-slate-950 rounded-2xl font-bold flex items-center gap-2 text-xs shadow-lg shadow-cyan-500/20 hover:bg-cyan-400 transition-all"
-        >
-          <Plus size={16} /> Ny Kunde
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsImporterOpen(true)}
+            className="px-6 py-3 bg-slate-800 text-cyan-400 border border-slate-700 rounded-2xl font-bold flex items-center gap-2 text-xs hover:bg-slate-700 transition-all"
+            >
+            <Upload size={16} /> Importer Leads
+          </button>
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="px-6 py-3 bg-cyan-500 text-slate-950 rounded-2xl font-bold flex items-center gap-2 text-xs shadow-lg shadow-cyan-500/20 hover:bg-cyan-400 transition-all"
+            >
+            <Plus size={16} /> Ny Kunde
+          </button>
+        </div>
       </header>
 
       {/* Stats */}
