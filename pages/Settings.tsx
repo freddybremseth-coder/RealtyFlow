@@ -5,7 +5,7 @@ import {
   Camera, Mail, Phone, Globe, Plus, Upload, X, Key,
   Inbox, CheckCircle2, AlertTriangle, Link, Zap,
   Facebook, Instagram, Linkedin, Youtube, Music2,
-  Pencil, Star, MapPin
+  Pencil, Star, MapPin, Trash2
 } from 'lucide-react';
 import { settingsStore, ApiKeys } from '../services/settingsService';
 import { Brand, AdvisorProfile, AutomationSettings, IntegrationSettings, AppLanguage } from '../types';
@@ -42,7 +42,8 @@ const BrandEditModal: React.FC<{
   brand: Partial<Brand>;
   onSave: (b: Partial<Brand>) => void;
   onClose: () => void;
-}> = ({ brand, onSave, onClose }) => {
+  onDelete: (id: number) => void;
+}> = ({ brand, onSave, onClose, onDelete }) => {
   const [b, setB] = useState<Partial<Brand>>({ ...brand });
   const logoRef = useRef<HTMLInputElement>(null);
 
@@ -57,6 +58,12 @@ const BrandEditModal: React.FC<{
     e.preventDefault();
     onSave(b);
   };
+
+  const handleDelete = () => {
+    if (b.id && window.confirm('Er du sikker på at du vil slette denne merkevaren?')) {
+      onDelete(b.id);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -128,18 +135,20 @@ const BrandEditModal: React.FC<{
           
           {/* Actions */}
           <div className="flex gap-3 pt-2">
+            {b.id && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-colors"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
             <button
               type="submit"
               className="flex-1 flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition-colors"
             >
               <Save size={15} /> Lagre merkevare
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors"
-            >
-              Avbryt
             </button>
           </div>
         </form>
@@ -215,6 +224,13 @@ const Settings: React.FC = () => {
     fetchBrands(); // Refresh brand list
   };
 
+  const handleBrandDelete = async (id: number) => {
+    const { error } = await supabase.from('brands').delete().eq('id', id);
+    if (error) console.error('Error deleting brand:', error);
+    setEditingBrand(null);
+    fetchBrands(); // Refresh brand list
+  }
+
   const handleLanguageChange = (newLang: AppLanguage) => {
     settingsStore.updateAutomation({ ...automation, language: newLang });
   };
@@ -266,6 +282,7 @@ const Settings: React.FC = () => {
           brand={editingBrand}
           onSave={handleBrandSave}
           onClose={() => setEditingBrand(null)}
+          onDelete={handleBrandDelete}
         />
       )}
 

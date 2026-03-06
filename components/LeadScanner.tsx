@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Camera, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
-import { gemini } from '../services/claudeService';
-import { leadStore } from '../services/leadService';
-import { LeadStatus } from '../types';
+import { gemini } from '../services/geminiService';
+import { crmStore } from '../services/crmService';
+import { CustomerStatus, CustomerType } from '../types';
 import './LeadScanner.css';
 
 export const LeadScanner = () => {
@@ -33,21 +34,21 @@ export const LeadScanner = () => {
           }
 
           for (const l of extracted) {
-            await leadStore.addLead({
+            crmStore.addCustomer({
               id: `scan-${Math.random().toString(36).substr(2, 9)}`,
-              status: LeadStatus.NEW,
-              sentiment: 70,
-              urgency: 60,
-              intent: 80,
-              lastActivity: 'AI Skjema-skann',
-              source: 'Lead Scanner',
-              value: l.value || 0,
               name: l.name || 'Ukjent',
               email: l.email || '',
               phone: l.phone || '',
-              summary: l.summary || '',
-              personalityType: l.personalityType || '',
-              requirements: { budget: l.value || 0, location: l.location || '' },
+              status: CustomerStatus.ACTIVE,
+              type: CustomerType.BUYER,
+              source: 'Lead Scanner',
+              notes: l.summary || '',
+              budget: l.value || 0,
+              location: l.location || '',
+              createdAt: new Date().toISOString(),
+              lastContact: new Date().toISOString(),
+              propertiesInterested: [],
+              propertiesBought: [],
             });
           }
 

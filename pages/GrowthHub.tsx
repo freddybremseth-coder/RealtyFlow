@@ -477,7 +477,7 @@ const GrowthHub: React.FC = () => {
                         >
                             {isPublishing ? <Loader2 className="animate-spin" size={24} /> : <Send size={24} />}
                             Publiser Kampanje
-                        </button
+                        </button>
                     </div>
                   </div>
                 )}
