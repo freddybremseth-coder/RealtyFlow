@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PLOT_DATA } from '../plot-data';
-import { Plot, PlotStatus, PlotType } from '../types';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Plot, PlotStatus } from '../types';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -15,9 +15,18 @@ const defaultIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+const highlightedIcon = new L.Icon({
+    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
 L.Marker.prototype.options.icon = defaultIcon;
 
-const PlotCard: React.FC<{ plot: Plot }> = ({ plot }) => {
+const PlotCard: React.FC<{ plot: Plot; onClick: () => void; isSelected: boolean }> = ({ plot, onClick, isSelected }) => {
   const formatPrice = (price?: number) => price?.toLocaleString('de-DE') + ' €' || 'N/A';
   const formatSize = (size?: number) => size?.toLocaleString('de-DE') + ' m²' || 'N/A';
 
@@ -32,7 +41,7 @@ const PlotCard: React.FC<{ plot: Plot }> = ({ plot }) => {
   }
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden shadow-lg transition-all hover:shadow-cyan-500/20 hover:-translate-y-1">
+    <div onClick={onClick} className={`bg-slate-900 border border-slate-800 rounded-lg overflow-hidden shadow-lg transition-all hover:shadow-cyan-500/20 hover:-translate-y-1 cursor-pointer ${isSelected ? 'border-cyan-400 shadow-cyan-500/30' : ''}`}>
       {plot.imageUrl && (
         <div className="h-40 bg-cover bg-center" style={{ backgroundImage: `url(${plot.imageUrl})` }}></div>
       )}
@@ -57,9 +66,19 @@ const PlotCard: React.FC<{ plot: Plot }> = ({ plot }) => {
   );
 };
 
+const MapUpdater: React.FC<{ plot: Plot | undefined }> = ({ plot }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (plot) {
+            map.flyTo([plot.location.lat, plot.location.lng], 14);
+        }
+    }, [plot, map]);
+    return null;
+}
 
 const Tomtebase: React.FC = () => {
-  const [plots, setPlots] = useState<Plot[]>(PLOT_DATA);
+  const [plots] = useState<Plot[]>(PLOT_DATA);
+  const [selectedPlotId, setSelectedPlotId] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
@@ -97,7 +116,9 @@ const Tomtebase: React.FC = () => {
   const locations = useMemo(() => {
       const allLocations = PLOT_DATA.map(p => p.name.split('-')[0].trim());
       return [...new Set(allLocations)];
-  }, [PLOT_DATA]);
+  }, []);
+
+  const selectedPlot = useMemo(() => plots.find(p => p.id === selectedPlotId), [plots, selectedPlotId]);
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-white p-4 lg:p-8">
@@ -141,18 +162,18 @@ const Tomtebase: React.FC = () => {
             <div className="lg:col-span-1 h-[600px] lg:h-auto overflow-y-auto pr-2">
                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                      {filteredAndSortedPlots.map(plot => (
-                        <PlotCard key={plot.id} plot={plot} />
+                        <PlotCard key={plot.id} plot={plot} onClick={() => setSelectedPlotId(plot.id)} isSelected={plot.id === selectedPlotId} />
                     ))}
                  </div>
             </div>
             <div className="lg:col-span-1 rounded-lg overflow-hidden border border-slate-800 h-[600px] lg:h-auto sticky top-24">
-                 <MapContainer center={[38.3452, -0.4815]} zoom={9} style={{ height: '100%', width: '100%', backgroundColor: '#1e293b' }}>
+                 <MapContainer center={[38.38, -0.9]} zoom={10} style={{ height: '100%', width: '100%', backgroundColor: '#1e293b' }}>
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                     />
                     {filteredAndSortedPlots.map(plot => (
-                        <Marker key={plot.id} position={[plot.location.lat, plot.location.lng]}>
+                        <Marker key={plot.id} position={[plot.location.lat, plot.location.lng]} icon={plot.id === selectedPlotId ? highlightedIcon : defaultIcon}>
                             <Popup>
                                 <div className="text-slate-800">
                                     <b>{plot.name}</b><br/>
@@ -162,6 +183,7 @@ const Tomtebase: React.FC = () => {
                             </Popup>
                         </Marker>
                     ))}
+                    <MapUpdater plot={selectedPlot} />
                 </MapContainer>
             </div>
         </div>
