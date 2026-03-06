@@ -136,6 +136,32 @@ export interface Property {
   agent_notes?: string;
 }
 
+export enum PlotStatus {
+  FOR_SALE = 'For Sale',
+  SOLD = 'Sold',
+  ON_HOLD = 'On Hold',
+  RESERVED = 'Reserved',
+}
+
+export interface Plot {
+  id: string;
+  name: string;
+  description?: string;
+  status: PlotStatus;
+  size?: number; // in m²
+  price?: number; // in €
+  cadastralNumber?: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  type: 'Urbano' | 'Rústico';
+  water?: boolean | 'possible';
+  electricity?: boolean | 'possible';
+  notes?: string;
+  imageUrl?: string;
+}
+
 export interface BrandVisualStyles {
   primaryColor: string;
   secondaryColor: string;

@@ -28,6 +28,7 @@ const Sidebar: React.FC = () => {
     { label: 'Kundekort', icon: <BookUser size={20} />, path: '/crm', group: 'core' },
     { label: 'Kalender', icon: <CalendarDays size={20} />, path: '/calendar', group: 'core' },
     { label: t.nav_inventory, icon: <Home size={20} />, path: '/inventory', group: 'core' },
+    { label: 'Tomtebase', icon: <MapPin size={20} />, path: '/tomtebase', group: 'core' },
     { label: t.nav_valuation || 'Verdivurdering', icon: <ClipboardList size={20} />, path: '/valuation', group: 'tools' },
     { label: t.nav_market, icon: <Map size={20} />, path: '/market', group: 'tools' },
     { label: t.nav_growth, icon: <Rocket size={20} />, path: '/growth', group: 'marketing' },

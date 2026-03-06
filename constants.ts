@@ -63,7 +63,7 @@ export const BRANDS: Brand[] = [
   },
   {
     id: 'pinosoecolife',
-    name: 'Pinosoecolife.com',
+    name: 'Pinoso Eco Life',
     type: 'Eco-Living',
     description: 'Autentisk økoliv i innlandet – bærekraftige fincaer og tomter i Pinoso-regionen.',
     tone: 'Authentic, Natural, Sustainable, Community',
@@ -71,6 +71,30 @@ export const BRANDS: Brand[] = [
     phone: '+47 960099965',
     phone2: '+34 900 000 003',
     website: 'https://pinosoecolife.com',
+    integrations: { ...EMPTY_INTEGRATIONS }
+  },
+  {
+    id: 'freddybremseth',
+    name: 'FreddyBremseth.com',
+    type: 'Rådgiver',
+    description: 'Personlig branding for Freddy Bremseth.',
+    tone: 'Personlig, Profesjonell, Direkte',
+    email: 'freddy@freddybremseth.com',
+    phone: '+47 960099965',
+    phone2: '',
+    website: 'https://freddybremseth.com',
+    integrations: { ...EMPTY_INTEGRATIONS }
+  },
+  {
+    id: 'chatgenius',
+    name: 'ChatGenius.pro',
+    type: 'Teknologi',
+    description: 'AI-drevne chat-løsninger for bedrifter.',
+    tone: 'Innovativ, Teknisk, Effektiv',
+    email: 'contact@chatgenius.pro',
+    phone: '',
+    phone2: '',
+    website: 'https://chatgenius.pro',
     integrations: { ...EMPTY_INTEGRATIONS }
   }
 ];

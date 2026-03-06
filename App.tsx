@@ -21,6 +21,7 @@ const CRM = lazy(() => import('./pages/CRM'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const MarketingTasks = lazy(() => import('./pages/MarketingTasks'));
 const ScannerPage = lazy(() => import('./pages/ScannerPage'));
+const Tomtebase = lazy(() => import('./pages/Tomtebase'));
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(authStore.isAuthenticated());
@@ -54,6 +55,7 @@ const App: React.FC = () => {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/pipeline" element={<Pipeline />} />
                   <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/tomtebase" element={<Tomtebase />} />
                   <Route path="/valuation" element={<Valuation />} />
                   <Route path="/market" element={<MarketPulse />} />
                   <Route path="/growth" element={<GrowthHub />} />
