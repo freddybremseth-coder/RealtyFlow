@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { leadStore } from '../services/leadService';
-import { COLORS } from '../constants';
 import { Lead, LeadStatus } from '../types';
 import LeadScoreRadar from '../components/LeadScoreRadar';
 import { gemini } from '../services/claudeService';
@@ -11,6 +10,7 @@ import {
   Plus, X, Camera, UserPlus, Loader2, Sparkles, Euro, MessageSquare, Brain, CloudUpload, CloudOff
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { COLORS } from '@/constants';
 
 const DASHBOARD_STATS = [
   { label: 'Global Leads', value: '452', change: '+8%', icon: <Users className="text-cyan-400" /> },
