@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { gemini } from '../services/claudeService';
+import { gemini } from '../services/geminiService';
 import { marketStore } from '../services/marketService';
 import { propertyStore } from '../services/propertyService';
 import { settingsStore } from '../services/settingsService';
@@ -23,6 +23,16 @@ import {
 } from 'lucide-react';
 import { BarChart as ReBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { MarketAnalysis, Property, Brand, AutomationSettings } from '../types';
+
+const BRAND_TEMPLATES: Record<string, string> = {
+  soleada:         'Fokuser på luksus, havutsikt i Altea Hills og en eksklusiv internasjonal livsstil.',
+  zeneco:          'Fokuser på moderne teknologi, energieffektivitet (A-rating) og minimalistisk design i Benidorm, Costa Blanca og Costa Calida.',
+  pinosoecolife:   'Fokuser på bærekraftig livsstil, ro, natur, fellesskap og økologiske fincas i Biar og Pinoso.',
+  chatgenius:      'Fokuser på AI-automatisering, tidsbesparelse og ROI for bedrifter. Selg chatbots og smarte workflow-løsninger som SaaS-abonnement.',
+  freddy:          'Bygg autoritet som ekspert på eiendom, AI og forretningsutvikling. Fremhev bøker, kurs, konsulentoppdrag og foredrag.',
+  donaanna:        'Fortell historien om olivengården i Spania – ekte håndverk, Middelhavets smaker, og premium ekstra virgin olivenolje levert til døren.',
+};
+
 
 const ANALYTICS_DATA = [
   { name: 'Man', clicks: 400, leads: 24, conversion: 6 },

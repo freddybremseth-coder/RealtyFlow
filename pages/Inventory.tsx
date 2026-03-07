@@ -8,9 +8,11 @@ import {
   Loader2, FileCode, AlertTriangle, Filter, X,
   Database, Info, Tag, Briefcase, Maximize2,
   Trees, Euro, ChevronLeft, ChevronRight, Share2, ClipboardList,
-  Download, Printer, Phone, Mail, Globe, User, Award, Zap, Link, FileText
+  Download, Printer, Phone, Mail, Globe, User, Award, Zap, Link, FileText,
+  LayoutGrid, Map as MapIcon
 } from 'lucide-react';
 import { Property, Brand, AdvisorProfile } from '../types';
+import PropertyMap from '../components/PropertyMap';
 
 const Inventory: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>(propertyStore.getProperties());
@@ -19,6 +21,7 @@ const Inventory: React.FC = () => {
   const [activeBrand, setActiveBrand] = useState<Brand>(settingsStore.getBrands()[0]);
   const [profile, setProfile] = useState<AdvisorProfile>(settingsStore.getProfile());
   
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isSyncingXml, setIsSyncingXml] = useState(false);
@@ -355,6 +358,25 @@ const Inventory: React.FC = () => {
         </div>
       </section>
 
+      {/* VIEW TOGGLE */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500 font-mono">{filteredProperties.length} boliger vist</p>
+        <div className="flex bg-slate-900/60 p-1 rounded-xl border border-slate-800 gap-1">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'grid' ? 'bg-cyan-500 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <LayoutGrid size={14} /> Galleri
+          </button>
+          <button
+            onClick={() => setViewMode('map')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${viewMode === 'map' ? 'bg-cyan-500 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <MapIcon size={14} /> Kart
+          </button>
+        </div>
+      </div>
+
       {/* ERROR */}
       {error && (
         <div className="p-6 glass border border-red-500/40 rounded-[2rem] flex items-start gap-4 bg-red-500/5">
@@ -378,26 +400,36 @@ const Inventory: React.FC = () => {
         </div>
       )}
 
+      {/* MAP VIEW */}
+      {viewMode === 'map' && (
+        <PropertyMap
+          properties={filteredProperties}
+          onSelectProperty={p => { setSelectedProperty(p); setActiveImageIndex(0); }}
+        />
+      )}
+
       {/* GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredProperties.slice(0, 48).map(prop => (
-          <div key={prop.id} onClick={() => { setSelectedProperty(prop); setActiveImageIndex(0); }} className="glass rounded-[2.5rem] border border-slate-800 overflow-hidden group hover:border-cyan-500/50 transition-all cursor-pointer shadow-xl animate-in zoom-in-95">
-            <div className="relative h-64 overflow-hidden bg-slate-900">
-              <img src={prop.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
-              <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-mono text-cyan-400 border border-cyan-500/20">€{prop.price?.toLocaleString()}</div>
-            </div>
-            <div className="p-8 space-y-4">
-              <h4 className="font-bold text-slate-100 group-hover:text-cyan-400 text-lg line-clamp-1">{prop.title}</h4>
-              <div className="flex items-center gap-2 text-slate-500 text-xs"><MapPin size={14} className="text-cyan-600" /> {prop.location}</div>
-              <div className="flex gap-4 pt-4 border-t border-slate-800/50 text-slate-400 text-xs">
-                 <div className="flex items-center gap-1.5"><BedDouble size={14} /> {prop.bedrooms}</div>
-                 <div className="flex items-center gap-1.5"><Bath size={14} /> {prop.bathrooms}</div>
-                 <div className="flex items-center gap-1.5"><Ruler size={14} /> {prop.area}m²</div>
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredProperties.slice(0, 48).map(prop => (
+            <div key={prop.id} onClick={() => { setSelectedProperty(prop); setActiveImageIndex(0); }} className="glass rounded-[2.5rem] border border-slate-800 overflow-hidden group hover:border-cyan-500/50 transition-all cursor-pointer shadow-xl animate-in zoom-in-95">
+              <div className="relative h-64 overflow-hidden bg-slate-900">
+                <img src={prop.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-mono text-cyan-400 border border-cyan-500/20">€{prop.price?.toLocaleString()}</div>
+              </div>
+              <div className="p-8 space-y-4">
+                <h4 className="font-bold text-slate-100 group-hover:text-cyan-400 text-lg line-clamp-1">{prop.title}</h4>
+                <div className="flex items-center gap-2 text-slate-500 text-xs"><MapPin size={14} className="text-cyan-600" /> {prop.location}</div>
+                <div className="flex gap-4 pt-4 border-t border-slate-800/50 text-slate-400 text-xs">
+                   <div className="flex items-center gap-1.5"><BedDouble size={14} /> {prop.bedrooms}</div>
+                   <div className="flex items-center gap-1.5"><Bath size={14} /> {prop.bathrooms}</div>
+                   <div className="flex items-center gap-1.5"><Ruler size={14} /> {prop.area}m²</div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* PROPERTY MODAL */}
       {selectedProperty && !showProspectus && (

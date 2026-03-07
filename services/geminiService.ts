@@ -20,13 +20,49 @@ export class GeminiService {
 
     let brandingContext = "";
     if (brand) {
-      brandingContext = `
-        YOU REPRESENT: ${brand.name}. 
-        COMPANY TYPE: ${brand.type}.
-        TONE: ${brand.tone}.
-        DESCRIPTION: ${brand.description}.
-        REGIONS: Specialist on Costa Blanca and Costa Calida.
-      `;
+      const isRealEstate = ['soleada', 'zeneco', 'pinosoecolife'].includes(brand.id);
+      const isSaaS = brand.id === 'chatgenius';
+      const isPersonal = brand.id === 'freddy';
+      const isAgriculture = brand.id === 'donaanna';
+
+      if (isRealEstate) {
+        brandingContext = `
+          YOU REPRESENT: ${brand.name}.
+          COMPANY TYPE: ${brand.type}.
+          TONE: ${brand.tone}.
+          DESCRIPTION: ${brand.description}.
+          SPECIALITY: Spanish real estate on Costa Blanca and Costa Calida.
+          SAFETY: Never give legal advice. Refer to lawyers/gestors.
+        `;
+      } else if (isSaaS) {
+        brandingContext = `
+          YOU REPRESENT: Chatgenius.pro – a SaaS platform selling AI-powered apps and automation systems.
+          TONE: ${brand.tone}.
+          FOCUS: Chatbots, AI automation, workflow tools, B2B sales, subscription model.
+          SAFETY: Be honest about capabilities; do not overpromise ROI.
+        `;
+      } else if (isPersonal) {
+        brandingContext = `
+          YOU REPRESENT: Freddy Bremseth's personal brand – author, investor, real estate expert, AI strategist.
+          TONE: ${brand.tone}.
+          SERVICES: Books, courses, consulting, keynote speaking, real estate advice, business development, digital marketing.
+          FOCUS: Building authority, selling expertise and knowledge products.
+        `;
+      } else if (isAgriculture) {
+        brandingContext = `
+          YOU REPRESENT: Donaanna.com – an authentic Spanish olive farm producing premium extra virgin olive oil and table olives.
+          TONE: ${brand.tone}.
+          FOCUS: Artisan quality, Mediterranean lifestyle, direct-to-consumer sales, farm story, sustainability.
+          PRODUCTS: Extra virgin olive oil, table olives, farm experience.
+        `;
+      } else {
+        brandingContext = `
+          YOU REPRESENT: ${brand.name}.
+          COMPANY TYPE: ${brand.type}.
+          TONE: ${brand.tone}.
+          DESCRIPTION: ${brand.description}.
+        `;
+      }
     }
 
     let profileContext = "";
@@ -40,15 +76,9 @@ export class GeminiService {
 
     return `
       DATE: ${today}.
-      ROLE: Senior Real Estate Advisor, Founder, Investor and Economist specialized in the Spanish property market for Zen Eco Homes.
+      ROLE: Senior advisor and content specialist for ${brand?.name || 'the business'}.
       ${brandingContext}
       ${profileContext}
-      
-      CRITICAL SAFETY INSTRUCTIONS:
-      - NEVER title yourself as "Legal Advisor".
-      - Never promise legal security or give definitive legal advice.
-      - Refer customers to external experts (lawyers/gestors) for legal/tax questions.
-      - Focus on value creation, market trends, investment opportunities, and lifestyle.
 
       LANGUAGE REQUIREMENT:
       - YOU MUST RESPOND EXCLUSIVELY IN: ${languageNames[lang]}.

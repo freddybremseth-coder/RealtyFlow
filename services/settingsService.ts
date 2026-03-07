@@ -48,6 +48,39 @@ const DEFAULT_BRANDS: Brand[] = [
     phone2: '+34 900 000 003',
     website: 'https://pinosoecolife.com',
     integrations: { ...EMPTY_INTEGRATIONS }
+  },
+  {
+    id: 'chatgenius',
+    name: 'Chatgenius.pro',
+    type: 'SaaS',
+    description: 'AI-drevne apper og systemer for bedrifter – chatbots, automatisering og intelligente løsninger solgt som SaaS.',
+    tone: 'Innovative, Clear, Tech-Forward, Helpful',
+    email: 'hello@chatgenius.pro',
+    phone: '+47 960099965',
+    website: 'https://chatgenius.pro',
+    integrations: { ...EMPTY_INTEGRATIONS }
+  },
+  {
+    id: 'freddy',
+    name: 'Freddybremseth.com',
+    type: 'Personal Brand',
+    description: 'Forfatter, investor og rådgiver – selger kompetanse innen eiendom, AI, forretningsutvikling og digital markedsføring.',
+    tone: 'Personal, Expert, Inspiring, Direct',
+    email: 'freddy@freddybremseth.com',
+    phone: '+47 960099965',
+    website: 'https://freddybremseth.com',
+    integrations: { ...EMPTY_INTEGRATIONS }
+  },
+  {
+    id: 'donaanna',
+    name: 'Donaanna.com',
+    type: 'Gård & Nettbutikk',
+    description: 'Olivengård i Spania – produserer og selger premium ekstra virgin olivenolje og bordoliven direkte til forbrukere.',
+    tone: 'Authentic, Warm, Artisan, Mediterranean',
+    email: 'hello@donaanna.com',
+    phone: '+34 900 000 004',
+    website: 'https://donaanna.com',
+    integrations: { ...EMPTY_INTEGRATIONS }
   }
 ];
 
