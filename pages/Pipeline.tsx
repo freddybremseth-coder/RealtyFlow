@@ -1,17 +1,19 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { LeadStatus, Lead, Property, ViewingItem, CallLog, NurtureStep, EmailMessage } from '../types';
 import { leadStore } from '../services/leadService';
 import { crmStore } from '../services/crmService';
 import { propertyStore } from '../services/propertyService';
+import { webhookService, WebhookLead } from '../services/webhookService';
 import { BRANDS } from '../constants';
 import { useNavigate } from 'react-router-dom';
-import { 
-  X, Plus, Sparkles, Zap, BrainCircuit, Target, BarChart, 
-  ChevronRight, CheckCircle2, Phone, Mail, Loader2, 
+import {
+  X, Plus, Sparkles, Zap, BrainCircuit, Target, BarChart,
+  ChevronRight, CheckCircle2, Phone, Mail, Loader2,
   RefreshCw, Copy, Check, FileText, Upload, File, MessageSquare, SendHorizontal, MapPin, Euro, BedDouble, Bath,
   Home, ImageIcon, Wand2, FileSearch, UserPlus, Save, Camera, Clock, Navigation, CalendarDays, User,
-  CheckSquare, Square, ClipboardList, Trash2, AlertTriangle, PhoneCall, History, Play, Quote, UserCheck, TrendingUp, Filter, Download, Inbox, MessageCircle
+  CheckSquare, Square, ClipboardList, Trash2, AlertTriangle, PhoneCall, History, Play, Quote, UserCheck, TrendingUp, Filter, Download, Inbox, MessageCircle,
+  Webhook, ChevronDown, Building2, ShoppingBag, WifiOff
 } from 'lucide-react';
 import { gemini } from '../services/claudeService';
 
@@ -37,11 +39,20 @@ const Pipeline: React.FC = () => {
   const [emailAnalysis, setEmailAnalysis] = useState<any>(null);
   const [isAnalyzingEmails, setIsAnalyzingEmails] = useState(false);
   
-  const [newLead, setNewLead] = useState({ 
-    name: '', email: '', value: '', notes: '', 
-    bedrooms: '', location: '', propertyType: '' 
+  const [newLead, setNewLead] = useState({
+    name: '', email: '', value: '', notes: '',
+    bedrooms: '', location: '', propertyType: ''
   });
-  
+
+  // ── Webhook Inbox state ──────────────────────────────────────────────
+  const [webhookLeads, setWebhookLeads] = useState<WebhookLead[]>([]);
+  const [webhookOpen, setWebhookOpen] = useState(true);
+  const [webhookOnline, setWebhookOnline] = useState<boolean | null>(null);
+  const [webhookLoading, setWebhookLoading] = useState(false);
+  const [importedWebhookIds, setImportedWebhookIds] = useState<Set<string>>(
+    () => new Set(JSON.parse(localStorage.getItem('rf_imported_wh_ids') ?? '[]'))
+  );
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,13 +61,65 @@ const Pipeline: React.FC = () => {
       const data = await leadStore.getLeads();
       setLeads(data);
     };
-    
+
     fetchLeads();
-    
+
     // Abonner på endringer og oppdater asynkront
     return leadStore.subscribe(async () => {
       const data = await leadStore.getLeads();
       setLeads(data);
+    });
+  }, []);
+
+  // ── Webhook Inbox: init og polling ──────────────────────────────────
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      const online = await webhookService.isAvailable();
+      if (!mounted) return;
+      setWebhookOnline(online);
+      if (!online) return;
+
+      setWebhookLoading(true);
+      const all = await webhookService.fetchAll(50);
+      if (mounted) {
+        setWebhookLeads(all);
+        setWebhookLoading(false);
+      }
+    };
+
+    init();
+    webhookService.startPolling();
+
+    const unsub = webhookService.subscribe((newOnes) => {
+      setWebhookLeads(prev => {
+        const ids = new Set(prev.map(l => l.id));
+        return [...newOnes.filter(l => !ids.has(l.id)), ...prev];
+      });
+    });
+
+    return () => {
+      mounted = false;
+      webhookService.stopPolling();
+      unsub();
+    };
+  }, []);
+
+  const handleWebhookRefresh = useCallback(async () => {
+    setWebhookLoading(true);
+    const all = await webhookService.fetchAll(50);
+    setWebhookLeads(all);
+    setWebhookLoading(false);
+  }, []);
+
+  const handleImportWebhookLead = useCallback(async (wl: WebhookLead) => {
+    const lead = webhookService.toRealtyFlowLead(wl);
+    await leadStore.addLead(lead);
+    setImportedWebhookIds(prev => {
+      const next = new Set([...prev, wl.id]);
+      localStorage.setItem('rf_imported_wh_ids', JSON.stringify([...next]));
+      return next;
     });
   }, []);
 
@@ -133,6 +196,135 @@ const Pipeline: React.FC = () => {
         </div>
       </header>
 
+      {/* ── Webhook Inbox ─────────────────────────────────────────── */}
+      <div className="rounded-3xl border border-slate-800 overflow-hidden">
+        <button
+          onClick={() => setWebhookOpen(v => !v)}
+          className="w-full flex items-center justify-between p-4 bg-slate-900/40 hover:bg-slate-900/60 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <Webhook size={16} className="text-cyan-400" />
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+              Webhook Inbox
+            </span>
+            {webhookOnline === false && (
+              <span className="flex items-center gap-1 text-[10px] text-slate-600 font-mono">
+                <WifiOff size={10} /> Offline
+              </span>
+            )}
+            {webhookOnline === true && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            )}
+            {webhookLeads.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-mono">
+                {webhookLeads.length}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={e => { e.stopPropagation(); handleWebhookRefresh(); }}
+              className="p-1.5 hover:bg-slate-700 rounded-lg transition-all"
+              title="Oppdater"
+            >
+              <RefreshCw size={12} className={`text-slate-500 ${webhookLoading ? 'animate-spin' : ''}`} />
+            </button>
+            <ChevronDown
+              size={14}
+              className={`text-slate-600 transition-transform ${webhookOpen ? 'rotate-180' : ''}`}
+            />
+          </div>
+        </button>
+
+        {webhookOpen && (
+          <div className="p-4">
+            {webhookOnline === null && (
+              <p className="text-center text-xs text-slate-600 py-6 font-mono">Kobler til Business Hub…</p>
+            )}
+            {webhookOnline === false && (
+              <div className="text-center py-8 opacity-40">
+                <WifiOff size={32} className="mx-auto mb-3 text-slate-600" />
+                <p className="text-xs text-slate-500 font-mono">Business Hub ikke tilgjengelig</p>
+                <p className="text-[10px] text-slate-600 mt-1">Start med: <code>cd business-hub && npm run dev</code></p>
+              </div>
+            )}
+            {webhookOnline === true && webhookLeads.length === 0 && !webhookLoading && (
+              <p className="text-center text-xs text-slate-600 py-6 font-mono">Ingen innkommende webhook-leads ennå</p>
+            )}
+            {webhookOnline === true && webhookLeads.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {webhookLeads.map(wl => {
+                  const imported = importedWebhookIds.has(wl.id);
+                  const isRE = wl.kilde === 'real-estate';
+                  return (
+                    <div
+                      key={wl.id}
+                      className={`p-4 rounded-2xl border transition-all ${
+                        imported
+                          ? 'border-emerald-500/20 bg-emerald-500/5 opacity-60'
+                          : 'border-slate-800 bg-slate-900/40 hover:border-cyan-500/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          {isRE
+                            ? <Building2 size={12} className="text-indigo-400" />
+                            : <ShoppingBag size={12} className="text-amber-400" />
+                          }
+                          <span className={`text-[10px] font-bold uppercase tracking-widest ${isRE ? 'text-indigo-400' : 'text-amber-400'}`}>
+                            {isRE ? 'Eiendom' : 'E-commerce'}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-slate-600 font-mono">
+                          {new Date(wl.createdAt).toLocaleDateString('no-NO')}
+                        </span>
+                      </div>
+
+                      <h4 className="font-bold text-slate-200 text-sm truncate">{wl.navn}</h4>
+                      {wl.epost && <p className="text-[10px] text-slate-500 truncate">{wl.epost}</p>}
+
+                      <div className="mt-2 space-y-0.5">
+                        {isRE && wl.lokasjon && (
+                          <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <MapPin size={9} /> {wl.lokasjon}
+                          </p>
+                        )}
+                        {isRE && wl.budsjett && (
+                          <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <Euro size={9} /> {wl.budsjett.toLocaleString('no-NO')}
+                          </p>
+                        )}
+                        {!isRE && wl.produkt && (
+                          <p className="text-[10px] text-slate-400 truncate">{wl.produkt}</p>
+                        )}
+                        {!isRE && wl.mengde && (
+                          <p className="text-[10px] text-slate-400">{wl.mengde} stk</p>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => handleImportWebhookLead(wl)}
+                        disabled={imported}
+                        className={`mt-3 w-full py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+                          imported
+                            ? 'bg-emerald-500/10 text-emerald-400 cursor-default'
+                            : 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20'
+                        }`}
+                      >
+                        {imported
+                          ? <><CheckCircle2 size={11} /> Importert</>
+                          : <><Plus size={11} /> Legg i Pipeline</>
+                        }
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {/* ── Pipeline kolonner ─────────────────────────────────────── */}
       <div className="flex gap-6 overflow-x-auto pb-8 snap-x no-scrollbar">
         {COLUMNS.map(column => (
           <div key={column.id} className="w-80 flex-shrink-0 flex flex-col gap-4 snap-start">
