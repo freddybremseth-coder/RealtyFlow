@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { gemini } from '../services/geminiService';
 import { settingsStore } from '../services/settingsService';
-import { BRANDS } from '../constants';
 import {
   Building2, Globe, Zap, Sparkles, Loader2, Copy, Check,
   TrendingUp, ShoppingBag, User, Leaf, Bot, BookOpen,
@@ -91,7 +90,7 @@ const BusinessOverview: React.FC = () => {
 
       {/* KPI stripe */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {BRANDS.map(b => {
+        {brands.map(b => {
           const meta = BRAND_META[b.id];
           if (!meta) return null;
           return (
@@ -188,7 +187,7 @@ const BusinessOverview: React.FC = () => {
           <BarChart3 size={12} className="text-cyan-400" /> Alle merkevarer — status og konfigurasjon
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {BRANDS.map(b => {
+          {brands.map(b => {
             const meta = BRAND_META[b.id];
             const config = brands.find(br => br.id === b.id);
             if (!meta || !config) return null;

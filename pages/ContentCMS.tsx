@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { gemini } from '../services/claudeService';
+import { settingsStore } from '../services/settingsService';
 import { FileText, Send, BookOpen, Mail, Sparkles, Copy, Check, Download, RefreshCw, Layout, MousePointer2, HardHat } from 'lucide-react';
 
 // Fjerner gjenværende markdown-tegn som AI av og til produserer
@@ -70,17 +71,13 @@ const ContentCMS: React.FC = () => {
             <div>
               <label className="block text-xs font-mono text-slate-500 uppercase mb-3">Target Brand Identity</label>
               <div className="space-y-2">
-                {[
-                  { id: 'soleada', name: 'Soleada.no', color: 'border-cyan-500/30 text-cyan-400' },
-                  { id: 'zeneco', name: 'Zeneco Homes', color: 'border-emerald-500/30 text-emerald-400' },
-                  { id: 'pinoso', name: 'Pinoso Eco Life', color: 'border-amber-500/30 text-amber-400' },
-                ].map((b) => (
+                {settingsStore.getBrands().map((b) => (
                   <button
                     key={b.id}
                     onClick={() => setBrand(b.id)}
                     className={`w-full p-4 rounded-2xl border text-sm font-bold transition-all flex items-center justify-between ${
-                      brand === b.id 
-                        ? `${b.color} bg-slate-900 shadow-lg shadow-black` 
+                      brand === b.id
+                        ? 'border-cyan-500/30 text-cyan-400 bg-slate-900 shadow-lg shadow-black'
                         : 'border-slate-800 text-slate-500 hover:border-slate-700'
                     }`}
                   >

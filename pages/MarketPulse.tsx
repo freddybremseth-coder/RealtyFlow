@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { MarketTheme, MarketAnalysis, MarketSchedule, Brand, AdvisorProfile } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { BRANDS } from '../constants';
 
 const MarketPulse: React.FC = () => {
   const navigate = useNavigate();
@@ -160,7 +159,7 @@ const MarketPulse: React.FC = () => {
         </div>
         <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-slate-800">
            <div className="flex bg-slate-950/50 p-1 rounded-xl mr-2">
-              {BRANDS.map(b => (
+              {settingsStore.getBrands().map(b => (
                 <button 
                   key={b.id} 
                   type="button"
