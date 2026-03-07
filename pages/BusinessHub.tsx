@@ -5,10 +5,11 @@ import {
   TrendingUp, TrendingDown, Euro, Mail, Phone,
   Clock, CheckCircle2, AlertCircle, Circle,
   Sparkles, Play, Loader2, Copy, Check,
-  ArrowUpRight, MoreHorizontal, Filter, RefreshCw,
-  Globe, Tag, Star, ChevronRight, BarChart3,
-  MessageSquare, Send, FileText, Image, Calendar,
-  Flame, Target, Award, Activity
+  MoreHorizontal, RefreshCw,
+  Globe, Star, ChevronRight, BarChart3,
+  Send, FileText, Link2,
+  Flame, Target, Activity, Facebook, Instagram, Newspaper,
+  Languages, X, AtSign
 } from 'lucide-react';
 import { gemini } from '../services/claudeService';
 import { settingsStore } from '../services/settingsService';
@@ -322,10 +323,145 @@ const OversiktTab: React.FC = () => (
   </div>
 );
 
+// ─── AI Reply-panel (brukes inne i InnboksTab) ────────────────────────────────
+interface AiReplyState {
+  loading: boolean;
+  subject: string;
+  body: string;
+  lang: string;
+  copied: boolean;
+  sent: boolean;
+}
+
+const LeadAiReply: React.FC<{ lead: InboxLead }> = ({ lead }) => {
+  const [state, setState] = useState<AiReplyState>({
+    loading: false, subject: '', body: '', lang: '', copied: false, sent: false,
+  });
+
+  const LANG_LABEL: Record<string, string> = {
+    no: '🇳🇴 Norsk', en: '🇬🇧 Engelsk', es: '🇪🇸 Spansk',
+    de: '🇩🇪 Tysk',  fr: '🇫🇷 Fransk', ru: '🇷🇺 Russisk',
+  };
+
+  const handleGenerate = async () => {
+    setState(s => ({ ...s, loading: true, subject: '', body: '', sent: false }));
+    try {
+      const res = await gemini.generateLeadReply(lead.melding, lead.navn, lead.kilde);
+      setState(s => ({ ...s, loading: false, subject: res.subject, body: res.body, lang: res.detectedLanguage }));
+    } catch (err: any) {
+      setState(s => ({ ...s, loading: false, body: `Feil: ${err.message}` }));
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`Emne: ${state.subject}\n\n${state.body}`);
+    setState(s => ({ ...s, copied: true }));
+    setTimeout(() => setState(s => ({ ...s, copied: false })), 2000);
+  };
+
+  const handleSend = () => {
+    const mailto = `mailto:${lead.epost}?subject=${encodeURIComponent(state.subject)}&body=${encodeURIComponent(state.body)}`;
+    window.open(mailto, '_blank');
+    setState(s => ({ ...s, sent: true }));
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Generer-knapp */}
+      {!state.body && (
+        <button
+          onClick={handleGenerate}
+          disabled={state.loading}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 hover:bg-indigo-500/20 transition-all disabled:opacity-50"
+        >
+          {state.loading
+            ? <><Loader2 size={13} className="animate-spin" /> Analyserer og skriver…</>
+            : <><Sparkles size={13} /> Generer AI Svar</>
+          }
+        </button>
+      )}
+
+      {/* E-postutkast */}
+      {state.body && !state.loading && (
+        <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 overflow-hidden animate-in slide-in-from-top-2 duration-300">
+          {/* Toppbar */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-indigo-500/15 bg-indigo-500/5">
+            <div className="flex items-center gap-2">
+              <Sparkles size={12} className="text-indigo-400" />
+              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">AI Utkast</span>
+              {state.lang && (
+                <span className="text-[10px] text-indigo-300/60 font-mono flex items-center gap-1">
+                  <Languages size={9} /> {LANG_LABEL[state.lang] ?? state.lang}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => setState(s => ({ ...s, subject: '', body: '' }))}
+              className="text-slate-600 hover:text-slate-400 transition-all"
+            >
+              <X size={13} />
+            </button>
+          </div>
+
+          {/* Emne */}
+          <div className="px-4 py-2.5 border-b border-indigo-500/10 flex items-center gap-2">
+            <span className="text-[10px] font-bold text-slate-600 w-12 uppercase">Emne</span>
+            <input
+              className="flex-1 bg-transparent text-xs text-slate-300 focus:outline-none"
+              value={state.subject}
+              onChange={e => setState(s => ({ ...s, subject: e.target.value }))}
+            />
+          </div>
+
+          {/* Til */}
+          <div className="px-4 py-2 border-b border-indigo-500/10 flex items-center gap-2">
+            <span className="text-[10px] font-bold text-slate-600 w-12 uppercase">Til</span>
+            <span className="text-xs text-slate-400 flex items-center gap-1">
+              <AtSign size={9} /> {lead.epost}
+            </span>
+          </div>
+
+          {/* Brødtekst */}
+          <textarea
+            className="w-full bg-transparent px-4 py-3 text-sm text-slate-300 leading-relaxed resize-none focus:outline-none"
+            rows={Math.min(state.body.split('\n').length + 2, 14)}
+            value={state.body}
+            onChange={e => setState(s => ({ ...s, body: e.target.value }))}
+          />
+
+          {/* Handlinger */}
+          <div className="flex items-center gap-2 px-4 py-3 border-t border-indigo-500/15 bg-indigo-500/5">
+            <button
+              onClick={handleSend}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${state.sent ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-cyan-500 text-slate-950 hover:bg-cyan-400'}`}
+            >
+              {state.sent ? <><CheckCircle2 size={13} /> Åpnet i e-postklient</> : <><Send size={13} /> Send via e-post</>}
+            </button>
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-all"
+            >
+              {state.copied ? <><Check size={13} className="text-emerald-400" /> Kopiert!</> : <><Copy size={13} /> Kopier</>}
+            </button>
+            <button
+              onClick={handleGenerate}
+              className="ml-auto flex items-center gap-1.5 text-[10px] text-slate-600 hover:text-slate-400 transition-all"
+            >
+              <RefreshCw size={10} /> Generer på nytt
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── InnboksTab ───────────────────────────────────────────────────────────────
 const InnboksTab: React.FC = () => {
   const [filter, setFilter] = useState<Source | 'alle'>('alle');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'alle'>('alle');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showReply, setShowReply] = useState<string | null>(null);
 
   const filtered = MOCK_LEADS.filter(l => {
     const matchKilde = filter === 'alle' || l.kilde === filter;
@@ -394,22 +530,26 @@ const InnboksTab: React.FC = () => {
         {filtered.map(lead => {
           const src = SOURCE_CONFIG[lead.kilde];
           const isOpen = expanded === lead.id;
+          const isReplying = showReply === lead.id;
           return (
             <div
               key={lead.id}
-              className={`glass rounded-2xl border transition-all cursor-pointer ${isOpen ? `${src.border} ${src.bg}` : 'border-slate-800 hover:border-slate-700'}`}
-              onClick={() => setExpanded(isOpen ? null : lead.id)}
+              className={`glass rounded-2xl border transition-all ${isOpen ? `${src.border} ${src.bg}` : 'border-slate-800 hover:border-slate-700'}`}
             >
-              <div className="p-4 flex items-start gap-4">
-                {/* Avatar */}
+              {/* Hode — klikk for å ekspandere */}
+              <div
+                className="p-4 flex items-start gap-4 cursor-pointer"
+                onClick={() => {
+                  setExpanded(isOpen ? null : lead.id);
+                  if (isOpen) setShowReply(null);
+                }}
+              >
                 <div
                   className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center font-bold text-sm"
                   style={{ background: src.textColor + '18', color: src.textColor }}
                 >
                   {lead.navn.charAt(0)}
                 </div>
-
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold text-slate-200">{lead.navn}</span>
@@ -425,8 +565,6 @@ const InnboksTab: React.FC = () => {
                   </p>
                   <p className="text-xs text-slate-400 mt-1.5 line-clamp-1">{lead.melding}</p>
                 </div>
-
-                {/* Høyre side */}
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
                   <span className="text-[9px] text-slate-600 font-mono whitespace-nowrap">{lead.tidspunkt}</span>
                   {lead.verdi && (
@@ -438,27 +576,39 @@ const InnboksTab: React.FC = () => {
                 </div>
               </div>
 
-              {/* Ekspandert visning */}
+              {/* Ekspandert panel */}
               {isOpen && (
                 <div className="px-4 pb-4 pt-1 border-t border-slate-800/50 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                  {/* Melding */}
                   <div className="bg-slate-950/60 rounded-xl p-4">
-                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-2">Melding</p>
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-2">Kundens melding</p>
                     <p className="text-sm text-slate-300 leading-relaxed">{lead.melding}</p>
                   </div>
+
+                  {/* Handlingsknapper */}
                   <div className="flex gap-2 flex-wrap">
-                    <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all">
-                      <Mail size={12} /> Send e-post
+                    <button
+                      onClick={() => setShowReply(isReplying ? null : lead.id)}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${isReplying ? 'bg-indigo-500 text-white' : 'bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 hover:bg-indigo-500/20'}`}
+                    >
+                      <Sparkles size={12} /> Generer AI Svar
+                    </button>
+                    <button
+                      onClick={() => window.open(`mailto:${lead.epost}`, '_blank')}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all border border-slate-700"
+                    >
+                      <Mail size={12} /> Skriv manuelt
                     </button>
                     <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all border border-slate-700">
                       <Phone size={12} /> Ring
                     </button>
-                    <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all border border-slate-700">
-                      <Sparkles size={12} /> AI-svar
-                    </button>
                     <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all">
-                      <CheckCircle2 size={12} /> Marker kvalifisert
+                      <CheckCircle2 size={12} /> Kvalifiser
                     </button>
                   </div>
+
+                  {/* AI Svar-panel */}
+                  {isReplying && <LeadAiReply lead={lead} />}
                 </div>
               )}
             </div>
@@ -550,98 +700,217 @@ const CrmTab: React.FC = () => {
 };
 
 const MarketingTab: React.FC = () => {
-  const [running, setRunning] = useState<string | null>(null);
-  const [results, setResults] = useState<Record<string, string>>({});
+  const brands = settingsStore.getBrands();
+  const [selectedBrand, setSelectedBrand] = useState<string>(brands[0]?.id ?? 'soleada');
+  const [inputMode, setInputMode] = useState<'url' | 'tekst'>('tekst');
+  const [urlInput, setUrlInput] = useState('');
+  const [textInput, setTextInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<{ facebook: string; instagram: string; newsletter: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const [selectedBrand, setSelectedBrand] = useState<Source | 'alle'>('alle');
 
-  const filtered = selectedBrand === 'alle' ? AI_TASKS : AI_TASKS.filter(t => t.brand === selectedBrand);
+  const handleGenerate = async () => {
+    const info = inputMode === 'url'
+      ? `URL: ${urlInput.trim()}\n\nHent informasjon fra denne URL-en og bruk den til å lage innholdet.`
+      : textInput.trim();
 
-  const handleRun = async (task: AiTask) => {
-    setRunning(task.id);
+    if (!info) { setError('Lim inn informasjon eller en URL før du genererer.'); return; }
+
+    setError('');
+    setLoading(true);
+    setResult(null);
     try {
-      const result = await gemini.generateCMSContent('markedsinnhold', task.prompt, task.brand);
-      setResults(prev => ({ ...prev, [task.id]: result }));
+      const res = await gemini.generateMarketingContent(info, selectedBrand);
+      setResult(res);
     } catch (err: any) {
-      setResults(prev => ({ ...prev, [task.id]: `Feil: ${err.message}` }));
+      setError(`Feil: ${err.message}`);
     } finally {
-      setRunning(null);
+      setLoading(false);
     }
   };
 
-  const handleCopy = (id: string, text: string) => {
+  const handleCopy = (key: string, text: string) => {
     navigator.clipboard.writeText(text);
-    setCopied(id);
+    setCopied(key);
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const OUTPUT_CARDS: { key: 'facebook' | 'instagram' | 'newsletter'; label: string; icon: React.ReactNode; color: string; border: string; bg: string }[] = [
+    { key: 'facebook',   label: 'Facebook-annonse',   icon: <Facebook size={14} />,  color: 'text-blue-400',   border: 'border-blue-500/25',   bg: 'bg-blue-500/5' },
+    { key: 'instagram',  label: 'Instagram-post',     icon: <Instagram size={14} />, color: 'text-pink-400',   border: 'border-pink-500/25',   bg: 'bg-pink-500/5' },
+    { key: 'newsletter', label: 'Nyhetsbrev-tekst',   icon: <Newspaper size={14} />, color: 'text-amber-400',  border: 'border-amber-500/25',  bg: 'bg-amber-500/5' },
+  ];
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Kilde-filter */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setSelectedBrand('alle')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${selectedBrand === 'alle' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:border-slate-700'}`}
-        >
-          Alle merkevarer
-        </button>
-        {Object.entries(SOURCE_CONFIG).map(([key, cfg]) => (
-          <button
-            key={key}
-            onClick={() => setSelectedBrand(key as Source)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${selectedBrand === key ? `${cfg.bg} ${cfg.border} ${cfg.color}` : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:border-slate-700'}`}
-          >
-            {cfg.icon} {cfg.shortLabel}
-          </button>
-        ))}
+
+      {/* ── Overskrift ─────────────────────────────────────────────────── */}
+      <div className="flex items-start gap-4">
+        <div className="p-3 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20">
+          <Sparkles size={20} className="text-fuchsia-400" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-white">AI Innholdsgenerator</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Lim inn produktinfo eller en bolig-URL — AI lager Facebook-annonse, Instagram-post og nyhetsbrev automatisk.</p>
+        </div>
       </div>
 
-      {/* AI-oppgaver */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {filtered.map(task => {
-          const src = SOURCE_CONFIG[task.brand];
-          const isRunning = running === task.id;
-          const result = results[task.id];
-          return (
-            <div key={task.id} className="space-y-3">
-              <div className={`glass p-5 rounded-2xl border ${src.border} space-y-3`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-xl ${src.bg} ${src.color} mt-0.5`}>{src.icon}</div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-200">{task.label}</p>
-                      <SourceTag source={task.brand} />
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleRun(task)}
-                    disabled={!!running}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${isRunning ? 'bg-slate-800 text-slate-500' : `${src.bg} ${src.color} border ${src.border} hover:opacity-80`} disabled:opacity-50`}
-                  >
-                    {isRunning
-                      ? <><Loader2 size={12} className="animate-spin" /> Kjører…</>
-                      : <><Sparkles size={12} /> Kjør AI</>
-                    }
-                  </button>
+      {/* ── Merkevare-velger ──────────────────────────────────────────── */}
+      <div className="glass rounded-2xl border border-slate-800 p-4 space-y-3">
+        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Merkevare / nettside</p>
+        <div className="flex flex-wrap gap-2">
+          {brands.map(b => (
+            <button
+              key={b.id}
+              onClick={() => setSelectedBrand(b.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${selectedBrand === b.id ? 'bg-fuchsia-500/15 border-fuchsia-500/40 text-fuchsia-300' : 'bg-slate-900/50 border-slate-800 text-slate-500 hover:border-slate-700 hover:text-slate-300'}`}
+            >
+              {b.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Input-seksjon ─────────────────────────────────────────────── */}
+      <div className="glass rounded-2xl border border-slate-800 overflow-hidden">
+        {/* Modus-tabs */}
+        <div className="flex border-b border-slate-800">
+          <button
+            onClick={() => setInputMode('tekst')}
+            className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all ${inputMode === 'tekst' ? 'bg-slate-800/60 text-white border-b-2 border-fuchsia-500' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <FileText size={12} /> Lim inn tekst / produktinfo
+          </button>
+          <button
+            onClick={() => setInputMode('url')}
+            className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all ${inputMode === 'url' ? 'bg-slate-800/60 text-white border-b-2 border-fuchsia-500' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <Link2 size={12} /> Lim inn URL
+          </button>
+        </div>
+
+        {/* Input-felt */}
+        <div className="p-4">
+          {inputMode === 'tekst' ? (
+            <textarea
+              className="w-full bg-transparent text-sm text-slate-300 placeholder-slate-700 resize-none focus:outline-none leading-relaxed"
+              rows={7}
+              placeholder={`Lim inn boligbeskrivelse, produktinfo, pris, antall rom, beliggenhet osv.\n\nEksempel:\nLuksus villa i Moraira, 4 soverom, 3 bad, privat pool, panoramautsikt over Middelhavet, 580 kvm, pris €1.250.000. Nyoppusset kjøkken, gulvvarme, garasje for 2 biler, nær strand og sentrum.`}
+              value={textInput}
+              onChange={e => setTextInput(e.target.value)}
+            />
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 bg-slate-950/60 rounded-xl px-4 py-3 border border-slate-800 focus-within:border-fuchsia-500/40 transition-all">
+                <Globe size={14} className="text-slate-600 flex-shrink-0" />
+                <input
+                  className="flex-1 bg-transparent text-sm text-slate-300 placeholder-slate-700 focus:outline-none"
+                  placeholder="https://soleada.no/eiendom/villa-moraira-123"
+                  value={urlInput}
+                  onChange={e => setUrlInput(e.target.value)}
+                />
+              </div>
+              <p className="text-[10px] text-slate-700 px-1">AI bruker URL-adressen som kontekst for å generere innholdet. Lim gjerne inn ekstra info nedenfor:</p>
+              <textarea
+                className="w-full bg-transparent text-sm text-slate-300 placeholder-slate-700 resize-none focus:outline-none leading-relaxed"
+                rows={3}
+                placeholder="Valgfri tilleggsinformasjon om eiendommen…"
+                value={textInput}
+                onChange={e => setTextInput(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Generer-knapp */}
+        <div className="px-4 pb-4 flex items-center gap-3">
+          <button
+            onClick={handleGenerate}
+            disabled={loading}
+            className="flex items-center gap-2.5 px-7 py-3 rounded-xl text-sm font-bold bg-fuchsia-500 text-white hover:bg-fuchsia-400 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-fuchsia-500/20"
+          >
+            {loading
+              ? <><Loader2 size={15} className="animate-spin" /> Genererer innhold…</>
+              : <><Sparkles size={15} /> Generer</>
+            }
+          </button>
+          {result && !loading && (
+            <span className="text-[10px] text-emerald-400 flex items-center gap-1.5">
+              <CheckCircle2 size={11} /> Ferdig generert
+            </span>
+          )}
+        </div>
+
+        {error && (
+          <div className="mx-4 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* ── Lastindikator ─────────────────────────────────────────────── */}
+      {loading && (
+        <div className="glass rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-8 flex flex-col items-center gap-4">
+          <Loader2 size={32} className="animate-spin text-fuchsia-400" />
+          <div className="text-center">
+            <p className="text-sm font-bold text-fuchsia-300">AI skriver innholdet ditt…</p>
+            <p className="text-xs text-slate-500 mt-1">Lager Facebook-annonse, Instagram-post og nyhetsbrev</p>
+          </div>
+          <div className="flex gap-6 text-[10px] text-slate-600 font-mono">
+            <span className="flex items-center gap-1"><Facebook size={9} /> Facebook</span>
+            <span className="flex items-center gap-1"><Instagram size={9} /> Instagram</span>
+            <span className="flex items-center gap-1"><Newspaper size={9} /> Nyhetsbrev</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Resultater ────────────────────────────────────────────────── */}
+      {result && !loading && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-slate-800" />
+            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-2">Generert innhold</span>
+            <div className="h-px flex-1 bg-slate-800" />
+          </div>
+
+          {OUTPUT_CARDS.map(card => (
+            <div key={card.key} className={`rounded-2xl border ${card.border} ${card.bg} overflow-hidden`}>
+              {/* Kortets header */}
+              <div className={`flex items-center justify-between px-5 py-3 border-b ${card.border}`}>
+                <div className={`flex items-center gap-2 font-bold text-sm ${card.color}`}>
+                  {card.icon} {card.label}
                 </div>
-                <p className="text-[10px] text-slate-600 leading-relaxed line-clamp-2 italic">"{task.prompt.substring(0, 100)}…"</p>
+                <button
+                  onClick={() => handleCopy(card.key, result[card.key])}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-slate-800/80 border border-slate-700 text-slate-400 hover:text-white transition-all"
+                >
+                  {copied === card.key
+                    ? <><Check size={10} className="text-emerald-400" /> Kopiert!</>
+                    : <><Copy size={10} /> Kopier</>
+                  }
+                </button>
               </div>
 
-              {result && (
-                <div className="relative bg-slate-950/80 border border-slate-800 rounded-2xl p-5 animate-in fade-in duration-300">
-                  <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap max-h-52 overflow-y-auto pr-6">{result}</p>
-                  <button
-                    onClick={() => handleCopy(task.id, result)}
-                    className="absolute top-3 right-3 p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all"
-                  >
-                    {copied === task.id ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                  </button>
-                </div>
-              )}
+              {/* Tekstboks (redigerbar) */}
+              <textarea
+                className={`w-full bg-transparent px-5 py-4 text-sm text-slate-300 leading-relaxed resize-none focus:outline-none`}
+                rows={card.key === 'newsletter' ? 12 : card.key === 'facebook' ? 8 : 7}
+                value={result[card.key]}
+                onChange={e => setResult(prev => prev ? { ...prev, [card.key]: e.target.value } : prev)}
+              />
             </div>
-          );
-        })}
-      </div>
+          ))}
+
+          {/* Regenerer */}
+          <button
+            onClick={handleGenerate}
+            className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-400 transition-all mx-auto"
+          >
+            <RefreshCw size={11} /> Generer på nytt
+          </button>
+        </div>
+      )}
     </div>
   );
 };

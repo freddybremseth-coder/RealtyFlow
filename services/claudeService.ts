@@ -257,6 +257,88 @@ Return ONLY valid JSON, no markdown or code fences:
     return this.chat(this.getContext(brand, profile), prompt, 2048);
   }
 
+  // ─── Markedsinnhold-generator (Facebook + Instagram + Nyhetsbrev) ──────────
+  async generateMarketingContent(
+    info: string,
+    brandId: string
+  ): Promise<{ facebook: string; instagram: string; newsletter: string }> {
+    const brand = settingsStore.getBrand(brandId);
+    const system = this.getContext(brand);
+    const prompt = `Du er en kreativ markedsfører for ${brand?.name || 'en eiendomsmegler/nettbutikk'}.
+
+Basert på følgende produkt-/eiendomsinformasjon skal du lage tre markedsføringstekster:
+
+---INFORMASJON---
+${info}
+---SLUTT---
+
+Lag NØYAKTIG dette formatet (bruk disse eksakte nøkkelordene som skilletegn):
+
+===FACEBOOK===
+Skriv en selgende Facebook-annonsestekst. Start med en sterk hook (spørsmål eller påstand). Inkluder fordeler, call-to-action og kontaktinfo. 120-180 ord. Ikke bruk markdown-formatering.
+
+===INSTAGRAM===
+Skriv en engasjerende Instagram-post. Kort, visuelt og inspirerende. 60-100 ord etterfulgt av en blank linje og 15-20 relevante hashtags på én linje.
+
+===NYHETSBREV===
+Skriv en nyhetsbrev-tekst (e-postformat). Inkluder: emneforslag øverst som "Emne: [tittel]", deretter brødtekst med ingress, 2-3 avsnitt og en klar CTA. 200-280 ord. Ikke bruk markdown-formatering.`;
+
+    const raw = await this.chat(system, prompt, 2048);
+
+    const extract = (tag: string, next: string): string => {
+      const pattern = new RegExp(`===${tag}===\\s*([\\s\\S]*?)(?===${next}===|$)`, 'i');
+      return raw.match(pattern)?.[1]?.trim() ?? '';
+    };
+
+    return {
+      facebook:   extract('FACEBOOK',   'INSTAGRAM'),
+      instagram:  extract('INSTAGRAM',  'NYHETSBREV'),
+      newsletter: extract('NYHETSBREV', 'END'),
+    };
+  }
+
+  // ─── AI e-postsvar til innkommende lead ────────────────────────────────────
+  async generateLeadReply(
+    leadMessage: string,
+    leadName: string,
+    brandId: string
+  ): Promise<{ subject: string; body: string; detectedLanguage: string }> {
+    const brand = settingsStore.getBrand(brandId);
+    const system = this.getContext(brand);
+    const prompt = `Du er en profesjonell rådgiver for ${brand?.name || 'Soleada.no'}.
+
+Analyser følgende innkommende melding fra en potensiell kunde og skriv et profesjonelt e-postsvar.
+
+KUNDENS NAVN: ${leadName}
+KUNDENS MELDING:
+"${leadMessage}"
+
+INSTRUKSJONER:
+1. Detekter kundens språk automatisk (norsk, engelsk, spansk, tysk, russisk, eller fransk).
+2. Skriv svaret på SAMME SPRÅK som kunden bruker.
+3. Vær varm, profesjonell og konkret. Adresser det kunden spør om direkte.
+4. Tilby neste steg (visning, gratis rådgivning, eller mer info).
+5. Avslutt med signatur fra ${brand?.name || 'teamet'}.
+
+Return ONLY valid JSON (no markdown fences):
+{
+  "detectedLanguage": "no",
+  "subject": "Emne/Subject line på kundens språk",
+  "body": "Komplett e-posttekst på kundens språk. Bruk \\n for linjeskift. Ikke bruk markdown."
+}`;
+
+    try {
+      const text = await this.chat(system, prompt, 1024);
+      return JSON.parse(this.cleanJson(text));
+    } catch {
+      return {
+        detectedLanguage: 'no',
+        subject: `Takk for din henvendelse, ${leadName}`,
+        body: `Hei ${leadName},\n\nTakk for at du tok kontakt. Vi har mottatt din henvendelse og vil komme tilbake til deg så snart som mulig.\n\nMed vennlig hilsen,\n${brand?.name || 'Teamet'}`,
+      };
+    }
+  }
+
   async generateCMSContent(
     contentType: string,
     topic: string,
