@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kontaktskjema – Eiendom i Spania</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan:  '#22d3ee',
+              dark:  '#0a0a0f',
+              card:  '#111118',
+              border:'#1e2030',
+            }
+          },
+          animation: {
+            'fade-up': 'fadeUp 0.5s ease forwards',
+            'pulse-slow': 'pulse 3s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeUp: {
+              '0%':   { opacity: '0', transform: 'translateY(16px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Glassmorphism + glødeffekter */
+    body { background: transparent; font-family: 'Inter', system-ui, sans-serif; }
+
+    .glass {
+      background: rgba(17, 17, 24, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(34, 211, 238, 0.08);
+    }
+
+    .glow-ring:focus {
+      outline: none;
+      border-color: rgba(34, 211, 238, 0.5);
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.08),
+                  0 0 20px rgba(34, 211, 238, 0.06);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #22d3ee 0%, #0891b2 100%);
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 100%);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .btn-primary:hover::after { opacity: 1; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(34,211,238,0.25); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary > span { position: relative; z-index: 1; }
+
+    .input-field {
+      background: rgba(10, 10, 15, 0.8);
+      border: 1px solid rgba(30, 32, 48, 1);
+      color: #e2e8f0;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .input-field::placeholder { color: rgba(100, 116, 139, 0.7); }
+
+    /* Dekorativ top-border glow */
+    .card-glow::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(34,211,238,0.4), transparent);
+    }
+
+    /* Success-ikon sirkel */
+    .success-circle {
+      background: radial-gradient(circle at center,
+        rgba(34,211,238,0.15) 0%,
+        rgba(34,211,238,0.04) 60%,
+        transparent 100%);
+      border: 1px solid rgba(34,211,238,0.2);
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(10,10,15,0.3);
+      border-top-color: rgba(10,10,15,0.9);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    label { letter-spacing: 0.04em; }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4 sm:p-8">
+
+  <div class="w-full max-w-lg">
+
+    <!-- Kort -->
+    <div class="glass rounded-3xl p-8 sm:p-10 relative card-glow shadow-2xl animate-fade-up">
+
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="flex items-center gap-2 mb-4">
+          <!-- Ikon -->
+          <div class="w-8 h-8 rounded-xl flex items-center justify-center"
+               style="background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.15);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="text-xs font-bold tracking-widest uppercase" style="color: #22d3ee;">Eiendom i Spania</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white leading-snug">
+          Finn din drømmebolig
+        </h2>
+        <p class="text-sm mt-2" style="color: rgba(148,163,184,0.8);">
+          Fortell oss hva du ser etter – vi svarer innen 24 timer.
+        </p>
+      </div>
+
+      <!-- ── Skjema ─────────────────────────────────────────── -->
+      <form id="contactForm" novalidate class="space-y-5">
+
+        <!-- Navn -->
+        <div>
+          <label class="block text-xs font-semibold mb-2" style="color: rgba(148,163,184,0.9);">
+            NAVN <span style="color:#22d3ee;">*</span>
+          </label>
+          <input
+            id="navn"
+            type="text"
+            placeholder="Ola Nordmann"
+            required
+            class="input-field glow-ring w-full rounded-xl px-4 py-3.5 text-sm"
+          />
+          <p id="navn-error" class="text-xs mt-1.5 hidden" style="color:#f87171;">Vennligst fyll inn navn.</p>
+        </div>
+
+        <!-- E-post -->
+        <div>
+          <label class="block text-xs font-semibold mb-2" style="color: rgba(148,163,184,0.9);">
+            E-POST <span style="color:#22d3ee;">*</span>
+          </label>
+          <input
+            id="epost"
+            type="email"
+            placeholder="ola@example.no"
+            required
+            class="input-field glow-ring w-full rounded-xl px-4 py-3.5 text-sm"
+          />
+          <p id="epost-error" class="text-xs mt-1.5 hidden" style="color:#f87171;">Vennligst fyll inn en gyldig e-postadresse.</p>
+        </div>
+
+        <!-- Telefon -->
+        <div>
+          <label class="block text-xs font-semibold mb-2" style="color: rgba(148,163,184,0.9);">
+            TELEFON
+          </label>
+          <input
+            id="telefon"
+            type="tel"
+            placeholder="+47 000 00 000"
+            class="input-field glow-ring w-full rounded-xl px-4 py-3.5 text-sm"
+          />
+        </div>
+
+        <!-- Hva ser du etter -->
+        <div>
+          <label class="block text-xs font-semibold mb-2" style="color: rgba(148,163,184,0.9);">
+            HVA SER DU ETTER I SPANIA? <span style="color:#22d3ee;">*</span>
+          </label>
+          <textarea
+            id="melding"
+            rows="4"
+            placeholder="F.eks: Leilighet nær strand i Alicante, budsjett €250 000–€350 000, 2 soverom, innflyttingsklar..."
+            required
+            class="input-field glow-ring w-full rounded-xl px-4 py-3.5 text-sm resize-none leading-relaxed"
+          ></textarea>
+          <p id="melding-error" class="text-xs mt-1.5 hidden" style="color:#f87171;">Fortell oss litt om hva du ser etter.</p>
+        </div>
+
+        <!-- Send-knapp -->
+        <button
+          type="submit"
+          id="submitBtn"
+          class="btn-primary w-full rounded-2xl py-4 text-sm font-bold tracking-wide mt-2"
+          style="color: #0a0a0f;"
+        >
+          <span id="btnContent" class="flex items-center justify-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            Send henvendelse
+          </span>
+        </button>
+
+        <!-- Feil-melding (nettverksfeil) -->
+        <div id="networkError" class="hidden rounded-xl p-4 text-sm" style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color:#fca5a5;">
+          Noe gikk galt. Prøv igjen eller kontakt oss direkte.
+        </div>
+
+      </form>
+
+      <!-- ── Takk-beskjed ──────────────────────────────────── -->
+      <div id="successMsg" class="hidden animate-fade-up">
+        <div class="flex flex-col items-center text-center py-8 gap-6">
+
+          <!-- Animert sjekkmerke -->
+          <div class="success-circle w-20 h-20 rounded-full flex items-center justify-center">
+            <svg id="checkIcon" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                 stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                 class="animate-fade-up">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-bold text-white mb-2">Takk for henvendelsen!</h3>
+            <p class="text-sm leading-relaxed" style="color: rgba(148,163,184,0.8);">
+              Vi har mottatt forespørselen din og vil<br/>
+              kontakte deg innen <strong style="color:#22d3ee;">24 timer</strong>.
+            </p>
+          </div>
+
+          <!-- Kvitteringsdetaljer -->
+          <div id="receiptDetails"
+               class="w-full rounded-2xl p-5 text-left space-y-2.5"
+               style="background: rgba(10,10,15,0.6); border: 1px solid rgba(30,32,48,0.8);">
+            <p class="text-[10px] font-bold tracking-widest uppercase mb-3" style="color: rgba(100,116,139,0.7);">Din forespørsel</p>
+            <div class="flex justify-between">
+              <span class="text-xs" style="color: rgba(100,116,139,0.8);">Navn</span>
+              <span id="r-navn" class="text-xs font-medium text-slate-200"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-xs" style="color: rgba(100,116,139,0.8);">E-post</span>
+              <span id="r-epost" class="text-xs font-medium text-slate-200"></span>
+            </div>
+            <div id="r-telefon-row" class="flex justify-between">
+              <span class="text-xs" style="color: rgba(100,116,139,0.8);">Telefon</span>
+              <span id="r-telefon" class="text-xs font-medium text-slate-200"></span>
+            </div>
+          </div>
+
+          <!-- Send ny henvendelse -->
+          <button
+            onclick="resetForm()"
+            class="text-xs font-semibold underline underline-offset-4 transition-colors"
+            style="color: rgba(34,211,238,0.6);"
+            onmouseover="this.style.color='rgba(34,211,238,0.9)'"
+            onmouseout="this.style.color='rgba(34,211,238,0.6)'"
+          >
+            Send ny henvendelse
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer-tekst -->
+      <p class="text-center text-[10px] mt-6" style="color: rgba(100,116,139,0.5);">
+        Dine opplysninger behandles trygt og deles ikke med tredjeparter.
+      </p>
+
+    </div>
+  </div>
+
+  <!-- ── JavaScript ─────────────────────────────────────────────── -->
+  <script>
+    const WEBHOOK_URL = 'https://realtyflow.chatgenius.pro/api/webhooks/real-estate';
+
+    const form        = document.getElementById('contactForm');
+    const successMsg  = document.getElementById('successMsg');
+    const submitBtn   = document.getElementById('submitBtn');
+    const btnContent  = document.getElementById('btnContent');
+    const networkError= document.getElementById('networkError');
+
+    // ── Validering ─────────────────────────────────────────────
+    function validateField(id, condition) {
+      const el    = document.getElementById(id);
+      const error = document.getElementById(id + '-error');
+      const valid = condition(el.value.trim());
+      error?.classList.toggle('hidden', valid);
+      el.style.borderColor = valid ? '' : 'rgba(248,113,113,0.5)';
+      return valid;
+    }
+
+    function validateAll() {
+      const v1 = validateField('navn',    v => v.length > 0);
+      const v2 = validateField('epost',   v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
+      const v3 = validateField('melding', v => v.length > 5);
+      return v1 && v2 && v3;
+    }
+
+    // Vis/fjern feil live
+    ['navn', 'epost', 'melding'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => {
+        const el    = document.getElementById(id);
+        const error = document.getElementById(id + '-error');
+        if (!error?.classList.contains('hidden')) {
+          error.classList.add('hidden');
+          el.style.borderColor = '';
+        }
+      });
+    });
+
+    // ── Submit ─────────────────────────────────────────────────
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      networkError.classList.add('hidden');
+
+      if (!validateAll()) return;
+
+      const navn    = document.getElementById('navn').value.trim();
+      const epost   = document.getElementById('epost').value.trim();
+      const telefon = document.getElementById('telefon').value.trim();
+      const melding = document.getElementById('melding').value.trim();
+
+      // Vis spinner
+      submitBtn.disabled = true;
+      btnContent.innerHTML = `
+        <div class="spinner"></div>
+        Sender…
+      `;
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            navn,
+            epost,
+            telefon: telefon || undefined,
+            melding,
+            kilde:   'nettside-skjema',
+          }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        // Fyll kvittering
+        document.getElementById('r-navn').textContent  = navn;
+        document.getElementById('r-epost').textContent = epost;
+        if (telefon) {
+          document.getElementById('r-telefon').textContent = telefon;
+        } else {
+          document.getElementById('r-telefon-row').classList.add('hidden');
+        }
+
+        // Bytt til suksess-visning
+        form.classList.add('hidden');
+        successMsg.classList.remove('hidden');
+
+      } catch (err) {
+        console.error('Webhook feil:', err);
+        networkError.classList.remove('hidden');
+        submitBtn.disabled = false;
+        btnContent.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          Send henvendelse
+        `;
+      }
+    });
+
+    // ── Reset ──────────────────────────────────────────────────
+    function resetForm() {
+      form.reset();
+      ['navn','epost','melding'].forEach(id => {
+        document.getElementById(id + '-error')?.classList.add('hidden');
+        document.getElementById(id).style.borderColor = '';
+      });
+      document.getElementById('r-telefon-row')?.classList.remove('hidden');
+      networkError.classList.add('hidden');
+      submitBtn.disabled = false;
+      btnContent.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Send henvendelse
+      `;
+      successMsg.classList.add('hidden');
+      form.classList.remove('hidden');
+    }
+  </script>
+
+</body>
+</html>
