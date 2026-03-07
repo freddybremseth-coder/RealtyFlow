@@ -23,6 +23,7 @@ const MarketingTasks = lazy(() => import('./pages/MarketingTasks'));
 const ScannerPage = lazy(() => import('./pages/ScannerPage'));
 const Tomtebase = lazy(() => import('./pages/Tomtebase'));
 const BusinessOverview = lazy(() => import('./pages/BusinessOverview'));
+const BusinessHub = lazy(() => import('./pages/BusinessHub'));
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(authStore.isAuthenticated());
@@ -68,6 +69,7 @@ const App: React.FC = () => {
                   <Route path="/calendar" element={<Calendar />} />
                   <Route path="/marketing-tasks" element={<MarketingTasks />} />
                   <Route path="/business" element={<BusinessOverview />} />
+                  <Route path="/hub" element={<BusinessHub />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
