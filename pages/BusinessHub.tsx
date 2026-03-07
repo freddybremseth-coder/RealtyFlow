@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { gemini } from '../services/claudeService';
 import { settingsStore } from '../services/settingsService';
+import { emailService } from '../services/emailService';
 
 // ─── Typer ────────────────────────────────────────────────────────────────────
 
@@ -330,12 +331,14 @@ interface AiReplyState {
   body: string;
   lang: string;
   copied: boolean;
-  sent: boolean;
+  sending: boolean;
+  sendResult: { ok: boolean; msg: string } | null;
 }
 
 const LeadAiReply: React.FC<{ lead: InboxLead }> = ({ lead }) => {
   const [state, setState] = useState<AiReplyState>({
-    loading: false, subject: '', body: '', lang: '', copied: false, sent: false,
+    loading: false, subject: '', body: '', lang: '',
+    copied: false, sending: false, sendResult: null,
   });
 
   const LANG_LABEL: Record<string, string> = {
@@ -359,10 +362,21 @@ const LeadAiReply: React.FC<{ lead: InboxLead }> = ({ lead }) => {
     setTimeout(() => setState(s => ({ ...s, copied: false })), 2000);
   };
 
-  const handleSend = () => {
-    const mailto = `mailto:${lead.epost}?subject=${encodeURIComponent(state.subject)}&body=${encodeURIComponent(state.body)}`;
-    window.open(mailto, '_blank');
-    setState(s => ({ ...s, sent: true }));
+  const handleSend = async () => {
+    setState(s => ({ ...s, sending: true, sendResult: null }));
+    const result = await emailService.send({
+      to:      lead.epost,
+      subject: state.subject,
+      text:    state.body,
+      replyTo: settingsStore.getAutomation().emailFromEmail,
+    });
+    setState(s => ({
+      ...s,
+      sending: false,
+      sendResult: result.success
+        ? { ok: true,  msg: `Sendt til ${lead.epost}` }
+        : { ok: false, msg: result.error ?? 'Ukjent feil' },
+    }));
   };
 
   return (
@@ -430,25 +444,44 @@ const LeadAiReply: React.FC<{ lead: InboxLead }> = ({ lead }) => {
           />
 
           {/* Handlinger */}
-          <div className="flex items-center gap-2 px-4 py-3 border-t border-indigo-500/15 bg-indigo-500/5">
-            <button
-              onClick={handleSend}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${state.sent ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-cyan-500 text-slate-950 hover:bg-cyan-400'}`}
-            >
-              {state.sent ? <><CheckCircle2 size={13} /> Åpnet i e-postklient</> : <><Send size={13} /> Send via e-post</>}
-            </button>
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-all"
-            >
-              {state.copied ? <><Check size={13} className="text-emerald-400" /> Kopiert!</> : <><Copy size={13} /> Kopier</>}
-            </button>
-            <button
-              onClick={handleGenerate}
-              className="ml-auto flex items-center gap-1.5 text-[10px] text-slate-600 hover:text-slate-400 transition-all"
-            >
-              <RefreshCw size={10} /> Generer på nytt
-            </button>
+          <div className="flex flex-col gap-2 px-4 py-3 border-t border-indigo-500/15 bg-indigo-500/5">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSend}
+                disabled={state.sending}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all disabled:opacity-50"
+              >
+                {state.sending
+                  ? <><Loader2 size={13} className="animate-spin" /> Sender…</>
+                  : <><Send size={13} /> Send e-post</>
+                }
+              </button>
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-all"
+              >
+                {state.copied ? <><Check size={13} className="text-emerald-400" /> Kopiert!</> : <><Copy size={13} /> Kopier</>}
+              </button>
+              <button
+                onClick={handleGenerate}
+                className="ml-auto flex items-center gap-1.5 text-[10px] text-slate-600 hover:text-slate-400 transition-all"
+              >
+                <RefreshCw size={10} /> Ny versjon
+              </button>
+            </div>
+
+            {/* Send-resultat */}
+            {state.sendResult && (
+              <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs border animate-in fade-in duration-200 ${state.sendResult.ok ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                {state.sendResult.ok ? <CheckCircle2 size={12} className="mt-0.5 flex-shrink-0" /> : <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />}
+                {state.sendResult.msg}
+                {!state.sendResult.ok && (
+                  <a href="/settings" className="ml-auto underline whitespace-nowrap text-slate-500 hover:text-slate-300">
+                    Innstillinger →
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

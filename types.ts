@@ -210,6 +210,10 @@ export interface AutomationSettings {
   socialSyncEnabled: boolean;
   leadNurtureEnabled: boolean;
   language?: AppLanguage;
+  // E-post utsending via Resend
+  resendApiKey?: string;
+  emailFromName?: string;
+  emailFromEmail?: string;
 }
 
 export interface AdvisorProfile {
