@@ -47,7 +47,7 @@ const ANALYTICS_DATA = [
 const GrowthHub: React.FC = () => {
   const location = useLocation();
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'ads' | 'automation' | 'stats' | 'guide' | 'library'>('ads');
   const [isGenerating, setIsGenerating] = useState(false);
   const [adResult, setAdResult] = useState<any>(null);
@@ -79,20 +79,10 @@ const GrowthHub: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>(propertyStore.getProperties());
   const [selectedContextAssets, setSelectedContextAssets] = useState<any[]>([]);
 
-  async function fetchBrands() {
-    const { data, error } = await supabase.from('brands').select('*');
-    if (error) {
-      console.error('Error fetching brands:', error);
-      return;
-    }
-    setBrands(data as Brand[]);
-    if (data && data.length > 0) {
-        setSelectedBrandId(data[0].id);
-    }
-  }
-  
   useEffect(() => {
-    fetchBrands();
+    const allBrands = settingsStore.getBrands();
+    setBrands(allBrands);
+    if (allBrands.length > 0) setSelectedBrandId(allBrands[0].id);
     if (location.state?.marketIntel) {
       addAssetToContext({ type: 'market', data: location.state.marketIntel });
     }
@@ -101,7 +91,8 @@ const GrowthHub: React.FC = () => {
   useEffect(() => {
     const selectedBrand = brands.find(b => b.id === selectedBrandId);
     if (selectedBrand && selectedContextAssets.length === 0) {
-      setObjective(`Fokuser på ${selectedBrand.name}. ${selectedBrand.description || 'Skap lyst på boligdrømmen i Spania.'}`);
+      const template = BRAND_TEMPLATES[selectedBrand.id] || selectedBrand.description || 'Skap lyst på boligdrømmen i Spania.';
+      setObjective(`Fokuser på ${selectedBrand.name}. ${template}`);
     }
   }, [selectedBrandId, brands]);
 

@@ -119,9 +119,12 @@ class SettingsService {
   private listeners: (() => void)[] = [];
 
   constructor() {
-    // Load saved brands, then merge in any new defaults that don't exist yet
+    // Canonical brand IDs — remove any saved brand not in this list (e.g. old 'pinoso')
+    const canonicalIds = new Set(DEFAULT_BRANDS.map(b => b.id));
     const saved: Brand[] = JSON.parse(localStorage.getItem('rf_brands') || '[]');
-    const merged = [...saved];
+    const validSaved = saved.filter(b => canonicalIds.has(b.id));
+    // Merge: keep user-customised saved brands, add any missing defaults
+    const merged = [...validSaved];
     for (const def of DEFAULT_BRANDS) {
       if (!merged.find(b => b.id === def.id)) merged.push(def);
     }
