@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Inbox, Users, Megaphone,
   Building2, ShoppingBag, Leaf, Bot, BookOpen, Zap,
@@ -14,6 +14,8 @@ import {
 import { gemini } from '../services/claudeService';
 import { settingsStore } from '../services/settingsService';
 import { emailService } from '../services/emailService';
+import { leadStore } from '../services/leadService';
+import { Lead, LeadStatus as PipelineStatus } from '../types';
 
 // ─── Typer ────────────────────────────────────────────────────────────────────
 
@@ -230,99 +232,200 @@ const StatusBadge: React.FC<{ status: LeadStatus }> = ({ status }) => {
 
 // ─── Faner ────────────────────────────────────────────────────────────────────
 
-const OversiktTab: React.FC = () => (
-  <div className="space-y-8 animate-in fade-in duration-300">
-    {/* KPI-kort */}
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {KPI_DATA.map((kpi) => (
-        <div key={kpi.label} className="glass p-5 rounded-2xl border border-slate-800 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-medium">{kpi.label}</span>
-            <span className={kpi.color}>{kpi.icon}</span>
-          </div>
-          <p className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
-          <p className={`text-[10px] flex items-center gap-1 ${kpi.positive ? 'text-emerald-400' : 'text-amber-400'}`}>
-            {kpi.positive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-            {kpi.delta}
-          </p>
-        </div>
-      ))}
-    </div>
+const OversiktTab: React.FC = () => {
+  const [leads, setLeads] = useState<Lead[]>([]);
 
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Leads per kilde */}
-      <div className="lg:col-span-2 glass p-6 rounded-2xl border border-slate-800 space-y-4">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-          <BarChart3 size={12} className="text-cyan-400" /> Leads per nettside
-        </h3>
-        {Object.entries(SOURCE_CONFIG).map(([key, cfg]) => {
-          const count = MOCK_LEADS.filter(l => l.kilde === key).length;
-          const pct = Math.round((count / MOCK_LEADS.length) * 100);
-          return (
-            <div key={key} className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={cfg.color}>{cfg.icon}</span>
-                  <span className="text-xs text-slate-300">{cfg.shortLabel}</span>
-                  <span className="text-[9px] text-slate-600 font-mono">{cfg.type}</span>
-                </div>
-                <span className={`text-xs font-bold ${cfg.color}`}>{count}</span>
-              </div>
-              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${pct}%`, backgroundColor: cfg.textColor }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+  useEffect(() => {
+    leadStore.getLeads().then(setLeads);
+    return leadStore.subscribe(() => leadStore.getLeads().then(setLeads));
+  }, []);
 
-      {/* Aktivitetsstrøm */}
-      <div className="glass p-6 rounded-2xl border border-slate-800 space-y-4">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-          <Activity size={12} className="text-cyan-400" /> Siste aktivitet
-        </h3>
-        <div className="space-y-4">
-          {ACTIVITY_FEED.map((item, i) => (
-            <div key={i} className="flex gap-3">
-              <div className="flex flex-col items-center">
-                <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${item.dot}`} />
-                {i < ACTIVITY_FEED.length - 1 && <div className="w-px flex-1 bg-slate-800 mt-1" />}
-              </div>
-              <div className="pb-3">
-                <p className="text-xs text-slate-200 font-medium">{item.text}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">{item.sub}</p>
-                <p className="text-[10px] text-slate-700 font-mono mt-0.5">{item.time}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+  // ── Beregn KPI-er fra ekte data ──────────────────────────────────────────
+  const activeLeads  = leads.filter(l => l.status !== PipelineStatus.LOST);
+  const wonLeads     = leads.filter(l => l.status === PipelineStatus.WON);
+  const newLeads     = leads.filter(l => l.status === PipelineStatus.NEW);
+  const pipelineVal  = leads.reduce((sum, l) => sum + (l.value ?? 0), 0);
+  const convRate     = leads.length > 0
+    ? Math.round((wonLeads.length / leads.length) * 100)
+    : 0;
 
-    {/* Nettside-oversikt */}
-    <div className="space-y-3">
-      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
-        <Globe size={12} className="text-cyan-400" /> Nettsider tilkoblet Business Hub
-      </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {Object.entries(SOURCE_CONFIG).map(([key, cfg]) => (
-          <div key={key} className={`p-4 rounded-2xl border ${cfg.bg} ${cfg.border} space-y-2`}>
-            <div className={`${cfg.color}`}>{cfg.icon}</div>
-            <p className={`text-xs font-bold ${cfg.color}`}>{cfg.shortLabel}</p>
-            <p className="text-[9px] text-slate-600 font-mono">{cfg.url}</p>
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[9px] text-emerald-400 font-mono">Live</span>
+  const kpis = [
+    {
+      label: 'Aktive leads',
+      value: String(activeLeads.length),
+      delta: newLeads.length > 0 ? `${newLeads.length} nye uten kontakt` : 'Alle fulgt opp',
+      positive: true,
+      icon: <Users size={18} />, color: 'text-cyan-400',
+    },
+    {
+      label: 'Pipeline-verdi',
+      value: pipelineVal >= 1_000_000
+        ? `€ ${(pipelineVal / 1_000_000).toFixed(1)}M`
+        : pipelineVal > 0
+          ? `€ ${pipelineVal.toLocaleString('no-NO')}`
+          : '€ 0',
+      delta: `${wonLeads.length} vunnet`,
+      positive: wonLeads.length > 0,
+      icon: <Euro size={18} />, color: 'text-emerald-400',
+    },
+    {
+      label: 'Konverteringsrate',
+      value: `${convRate}%`,
+      delta: leads.length > 0
+        ? `${wonLeads.length} av ${leads.length} leads`
+        : 'Ingen leads ennå',
+      positive: convRate > 0,
+      icon: <Target size={18} />, color: 'text-indigo-400',
+    },
+    {
+      label: 'Nye leads',
+      value: String(newLeads.length),
+      delta: newLeads.length > 0 ? 'Venter på oppfølging' : 'Ingen i kø',
+      positive: newLeads.length === 0,
+      icon: <AlertCircle size={18} />, color: 'text-amber-400',
+    },
+  ];
+
+  // ── Antall leads per merkevare ───────────────────────────────────────────
+  const countByBrand = (key: string) =>
+    leads.filter(l => l.brandId === key).length;
+
+  const maxCount = Math.max(
+    1,
+    ...Object.keys(SOURCE_CONFIG).map(k => countByBrand(k)),
+  );
+
+  // ── Siste 5 leads som aktivitetsstrøm ───────────────────────────────────
+  const recentLeads = leads.slice(0, 5);
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-300">
+
+      {/* KPI-kort */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="glass p-5 rounded-2xl border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">{kpi.label}</span>
+              <span className={kpi.color}>{kpi.icon}</span>
             </div>
+            <p className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
+            <p className={`text-[10px] flex items-center gap-1 ${kpi.positive ? 'text-emerald-400' : 'text-amber-400'}`}>
+              {kpi.positive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+              {kpi.delta}
+            </p>
           </div>
         ))}
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Leads per nettside – teller fra ekte leadStore */}
+        <div className="lg:col-span-2 glass p-6 rounded-2xl border border-slate-800 space-y-4">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+            <BarChart3 size={12} className="text-cyan-400" /> Leads per nettside
+          </h3>
+          {Object.entries(SOURCE_CONFIG).map(([key, cfg]) => {
+            const count = countByBrand(key);
+            const pct   = Math.round((count / maxCount) * 100);
+            return (
+              <div key={key} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={cfg.color}>{cfg.icon}</span>
+                    <span className="text-xs text-slate-300">{cfg.shortLabel}</span>
+                    <span className="text-[9px] text-slate-600 font-mono">{cfg.type}</span>
+                  </div>
+                  <span className={`text-xs font-bold ${count === 0 ? 'text-slate-600' : cfg.color}`}>
+                    {count}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${pct}%`, backgroundColor: count === 0 ? '#1e293b' : cfg.textColor }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+          {leads.length === 0 && (
+            <p className="text-[10px] text-slate-600 text-center py-2">
+              Ingen leads importert ennå
+            </p>
+          )}
+        </div>
+
+        {/* Aktivitetsstrøm – siste ekte leads */}
+        <div className="glass p-6 rounded-2xl border border-slate-800 space-y-4">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+            <Activity size={12} className="text-cyan-400" /> Siste aktivitet
+          </h3>
+          <div className="space-y-4">
+            {recentLeads.length === 0 && (
+              <p className="text-[10px] text-slate-600">Ingen leads ennå</p>
+            )}
+            {recentLeads.map((lead, i) => {
+              const srcKey = (lead.brandId ?? 'soleada') as Source;
+              const cfg    = SOURCE_CONFIG[srcKey] ?? SOURCE_CONFIG.soleada;
+              return (
+                <div key={lead.id} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-2 h-2 rounded-full mt-1 flex-shrink-0"
+                      style={{ backgroundColor: cfg.textColor }}
+                    />
+                    {i < recentLeads.length - 1 && (
+                      <div className="w-px flex-1 bg-slate-800 mt-1" />
+                    )}
+                  </div>
+                  <div className="pb-3">
+                    <p className="text-xs text-slate-200 font-medium">
+                      Ny lead — {cfg.shortLabel}
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      {lead.name}
+                      {lead.value > 0 ? ` · €${lead.value.toLocaleString('no-NO')}` : ''}
+                    </p>
+                    <p className="text-[10px] text-slate-700 font-mono mt-0.5">
+                      {lead.lastActivity}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Nettside-oversikt */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+          <Globe size={12} className="text-cyan-400" /> Nettsider tilkoblet Business Hub
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {Object.entries(SOURCE_CONFIG).map(([key, cfg]) => {
+            const count = countByBrand(key);
+            return (
+              <div key={key} className={`p-4 rounded-2xl border ${cfg.bg} ${cfg.border} space-y-2`}>
+                <div className={cfg.color}>{cfg.icon}</div>
+                <p className={`text-xs font-bold ${cfg.color}`}>{cfg.shortLabel}</p>
+                <p className="text-[9px] text-slate-600 font-mono">{cfg.url}</p>
+                <p className={`text-[10px] font-bold ${count === 0 ? 'text-slate-600' : cfg.color}`}>
+                  {count} lead{count !== 1 ? 's' : ''}
+                </p>
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[9px] text-emerald-400 font-mono">Live</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── AI Reply-panel (brukes inne i InnboksTab) ────────────────────────────────
 interface AiReplyState {
