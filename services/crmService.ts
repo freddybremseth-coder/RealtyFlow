@@ -1,172 +1,172 @@
 
-import { Customer, CustomerStatus, CustomerType, Lead, EmailMessage } from '../types';
+import { Customer, CustomerStatus, CustomerType, EmailMessage } from '../types';
+import { supabase } from './supabase';
+import { Lead } from '../types';
 
-const STORAGE_KEY = 'rf_crm_customers';
+// ─── snake_case ↔ camelCase ───────────────────────────────────────────────────
 
-const MOCK_CUSTOMERS: Customer[] = [
-  {
-    id: 'c1',
-    name: 'Erik Lindström',
-    email: 'erik.lindstrom@email.com',
-    phone: '+47 912 34 567',
-    nationality: 'Norsk',
-    source: 'Nettside',
-    status: CustomerStatus.VIP,
-    type: CustomerType.BUYER,
-    notes: 'Interessert i villa med havutsikt. Klar til å kjøpe innen 3 måneder.',
-    createdAt: '2026-01-15T10:00:00Z',
-    lastContact: '2026-02-28T14:00:00Z',
-    totalValue: 850000,
-    budget: 900000,
-    location: 'Costa Blanca Nord',
-    tags: ['VIP', 'Klar kjøper'],
-    propertiesInterested: [],
-    propertiesBought: [],
-    emails: [
-      {
-        id: 'em1',
-        date: '2026-01-16T09:15:00Z',
-        from: 'erik.lindstrom@email.com',
-        subject: 'Henvendelse om villa Costa Blanca',
-        body: 'Hei!\n\nJeg fant nettsiden deres og er veldig interessert i å kjøpe en villa på Costa Blanca Nord. Budsjettet mitt er rundt €900.000. Har dere noe passende?\n\nMvh, Erik',
-        isIncoming: true,
-      },
-      {
-        id: 'em2',
-        date: '2026-01-17T11:30:00Z',
-        from: 'freddy@soleada.no',
-        subject: 'Re: Henvendelse om villa Costa Blanca',
-        body: 'Hei Erik!\n\nTusen takk for din henvendelse. Vi har nettopp fått inn to fantastiske villaer som passer perfekt til ditt budsjett. Jeg sender deg prospektene i morgen.\n\nMvh, Freddy',
-        isIncoming: false,
-      },
-      {
-        id: 'em3',
-        date: '2026-02-28T14:00:00Z',
-        from: 'erik.lindstrom@email.com',
-        subject: 'Re: Henvendelse om villa Costa Blanca',
-        body: 'Hei Freddy,\n\nJeg har sett på prospektene – villa nr. 2 i Altea virker veldig interessant. Er det mulig å avtale en visning i mars?\n\nMvh, Erik',
-        isIncoming: true,
-      },
-    ],
-  },
-  {
-    id: 'c2',
-    name: 'Anna Bergström',
-    email: 'anna.b@mail.se',
-    phone: '+46 70 234 5678',
-    nationality: 'Svensk',
-    source: 'Messe',
-    status: CustomerStatus.ACTIVE,
-    type: CustomerType.INVESTOR,
-    notes: 'Ser etter investeringsobjekter med god leieavkastning.',
-    createdAt: '2026-02-01T09:00:00Z',
-    lastContact: '2026-02-25T11:00:00Z',
-    totalValue: 1200000,
-    budget: 1500000,
-    location: 'Murcia',
-    tags: ['Investor', 'Leie'],
-    propertiesInterested: [],
-    propertiesBought: [],
-  },
-  {
-    id: 'c3',
-    name: 'Hans Müller',
-    email: 'hans.mueller@gmail.de',
-    phone: '+49 176 9876543',
-    nationality: 'Tysk',
-    source: 'Facebook',
-    status: CustomerStatus.ACTIVE,
-    type: CustomerType.BUYER,
-    notes: 'Pensjonist. Ønsker leilighet nær strand.',
-    createdAt: '2026-01-20T08:00:00Z',
-    lastContact: '2026-02-20T10:00:00Z',
-    budget: 350000,
-    location: 'Torrevieja',
-    tags: ['Pensjonist'],
-    propertiesInterested: [],
-    propertiesBought: [],
-  },
-];
-
-function load(): Customer[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return [...MOCK_CUSTOMERS];
+function rowToCustomer(row: Record<string, unknown>): Customer {
+  return {
+    id:                   String(row.id ?? ''),
+    name:                 String(row.name ?? ''),
+    email:                String(row.email ?? ''),
+    phone:                String(row.phone ?? ''),
+    nationality:          row.nationality ? String(row.nationality) : undefined,
+    source:               row.source ? String(row.source) : undefined,
+    status:               (row.status as CustomerStatus) ?? CustomerStatus.ACTIVE,
+    type:                 (row.type as CustomerType) ?? CustomerType.BUYER,
+    notes:                row.notes ? String(row.notes) : undefined,
+    budget:               row.budget ? Number(row.budget) : undefined,
+    location:             row.location ? String(row.location) : undefined,
+    tags:                 (row.tags as string[]) ?? [],
+    leadId:               row.lead_id ? String(row.lead_id) : undefined,
+    brandId:              row.brand_id ? String(row.brand_id) : undefined,
+    totalValue:           row.total_value ? Number(row.total_value) : undefined,
+    propertiesInterested: (row.properties_interested as string[]) ?? [],
+    propertiesBought:     (row.properties_bought as string[]) ?? [],
+    createdAt:            String(row.created_at ?? new Date().toISOString()),
+    lastContact:          String(row.last_contact ?? new Date().toISOString()),
+    emails:               (row.emails as EmailMessage[]) ?? [],
+  };
 }
 
-function save(customers: Customer[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
-  } catch {}
+function customerToRow(c: Customer): Record<string, unknown> {
+  return {
+    id:                   c.id,
+    name:                 c.name,
+    email:                c.email,
+    phone:                c.phone,
+    nationality:          c.nationality ?? null,
+    source:               c.source ?? null,
+    status:               c.status,
+    type:                 c.type,
+    notes:                c.notes ?? null,
+    budget:               c.budget ?? null,
+    location:             c.location ?? null,
+    tags:                 c.tags ?? [],
+    lead_id:              c.leadId ?? null,
+    brand_id:             c.brandId ?? null,
+    total_value:          c.totalValue ?? 0,
+    properties_interested: c.propertiesInterested ?? [],
+    properties_bought:    c.propertiesBought ?? [],
+    created_at:           c.createdAt,
+    last_contact:         c.lastContact,
+    emails:               c.emails ?? [],
+  };
 }
 
 class CrmService {
-  private customers: Customer[] = load();
+  private customers: Customer[] = [];
   private listeners: (() => void)[] = [];
+  private loaded = false;
+
+  constructor() {
+    this.init();
+  }
+
+  private async init() {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('crmService init error:', error.message);
+      this.customers = [];
+    } else {
+      this.customers = (data ?? []).map(rowToCustomer);
+    }
+    this.loaded = true;
+    this.notify();
+  }
 
   getCustomers(): Customer[] {
     return this.customers;
   }
 
-  addCustomer(customer: Customer): void {
+  async addCustomer(customer: Customer): Promise<void> {
+    const row = customerToRow(customer);
+    const { error } = await supabase.from('customers').insert(row);
+    if (error) {
+      console.error('addCustomer error:', error.message);
+      return;
+    }
     this.customers = [customer, ...this.customers];
-    save(this.customers);
     this.notify();
   }
 
-  updateCustomer(id: string, updates: Partial<Customer>): void {
+  async updateCustomer(id: string, updates: Partial<Customer>): Promise<void> {
+    // Build partial row with snake_case keys
+    const partial: Record<string, unknown> = {};
+    if (updates.name !== undefined)        partial.name = updates.name;
+    if (updates.email !== undefined)       partial.email = updates.email;
+    if (updates.phone !== undefined)       partial.phone = updates.phone;
+    if (updates.nationality !== undefined) partial.nationality = updates.nationality;
+    if (updates.source !== undefined)      partial.source = updates.source;
+    if (updates.status !== undefined)      partial.status = updates.status;
+    if (updates.type !== undefined)        partial.type = updates.type;
+    if (updates.notes !== undefined)       partial.notes = updates.notes;
+    if (updates.budget !== undefined)      partial.budget = updates.budget;
+    if (updates.location !== undefined)    partial.location = updates.location;
+    if (updates.tags !== undefined)        partial.tags = updates.tags;
+    if (updates.totalValue !== undefined)  partial.total_value = updates.totalValue;
+    if (updates.lastContact !== undefined) partial.last_contact = updates.lastContact;
+    if (updates.emails !== undefined)      partial.emails = updates.emails;
+
+    const { error } = await supabase.from('customers').update(partial).eq('id', id);
+    if (error) {
+      console.error('updateCustomer error:', error.message);
+      return;
+    }
     this.customers = this.customers.map(c => c.id === id ? { ...c, ...updates } : c);
-    save(this.customers);
     this.notify();
   }
 
-  convertFromLead(lead: Lead): Customer {
+  async convertFromLead(lead: Lead): Promise<Customer> {
     const customer: Customer = {
-      id: `crm-${Date.now()}`,
-      name: lead.name,
-      email: lead.email,
-      phone: lead.phone || '',
-      source: lead.source || 'Pipeline',
-      status: CustomerStatus.ACTIVE,
-      type: CustomerType.BUYER,
-      notes: lead.summary || undefined,
-      budget: lead.requirements?.budget || lead.value || undefined,
-      location: lead.requirements?.location || undefined,
-      tags: ['Fra pipeline'],
-      leadId: lead.id,
-      brandId: lead.brandId,
-      createdAt: new Date().toISOString(),
-      lastContact: new Date().toISOString(),
-      totalValue: lead.value || 0,
+      id:                   `crm-${Date.now()}`,
+      name:                 lead.name,
+      email:                lead.email,
+      phone:                lead.phone || '',
+      source:               lead.source || 'Pipeline',
+      status:               CustomerStatus.ACTIVE,
+      type:                 CustomerType.BUYER,
+      notes:                lead.summary || undefined,
+      budget:               lead.requirements?.budget || lead.value || undefined,
+      location:             lead.requirements?.location || undefined,
+      tags:                 ['Fra pipeline'],
+      leadId:               lead.id,
+      brandId:              lead.brandId,
+      createdAt:            new Date().toISOString(),
+      lastContact:          new Date().toISOString(),
+      totalValue:           lead.value || 0,
       propertiesInterested: [],
-      propertiesBought: [],
+      propertiesBought:     [],
     };
-    // Unngå duplikat hvis allerede konvertert
     const exists = this.customers.some(c => c.leadId === lead.id);
     if (!exists) {
-      this.addCustomer(customer);
+      await this.addCustomer(customer);
     }
     return customer;
   }
 
-  addEmailToCustomer(customerId: string, email: EmailMessage): void {
-    this.customers = this.customers.map(c => {
-      if (c.id !== customerId) return c;
-      return {
-        ...c,
-        emails: [...(c.emails ?? []), email],
-        lastContact: new Date().toISOString(),
-      };
+  async addEmailToCustomer(customerId: string, email: EmailMessage): Promise<void> {
+    const customer = this.customers.find(c => c.id === customerId);
+    if (!customer) return;
+    const updatedEmails = [...(customer.emails ?? []), email];
+    await this.updateCustomer(customerId, {
+      emails: updatedEmails,
+      lastContact: new Date().toISOString(),
     });
-    save(this.customers);
-    this.notify();
   }
 
-  removeCustomer(id: string): void {
+  async removeCustomer(id: string): Promise<void> {
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) {
+      console.error('removeCustomer error:', error.message);
+      return;
+    }
     this.customers = this.customers.filter(c => c.id !== id);
-    save(this.customers);
     this.notify();
   }
 

@@ -180,7 +180,7 @@ const CustomerDetailPanel: React.FC<{
         body,
         isIncoming: false,
       };
-      crmStore.addEmailToCustomer(customer.id, sent);
+      await crmStore.addEmailToCustomer(customer.id, sent);
       const updated = { ...customer, emails: [...emails, sent], lastContact: new Date().toISOString() };
       onCustomerUpdate(updated);
       setSubject('');
@@ -228,8 +228,8 @@ const CustomerDetailPanel: React.FC<{
     }`;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex justify-end animate-in slide-in-from-right duration-300">
-      <div className="w-full lg:w-[620px] bg-[#0a0a0c] border-l border-slate-800 h-full flex flex-col shadow-2xl">
+    <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-0 lg:p-6 animate-in fade-in duration-200">
+      <div className="w-full h-full lg:h-[92vh] lg:max-w-3xl bg-[#0a0a0c] border border-slate-800 lg:rounded-[2rem] flex flex-col shadow-2xl overflow-hidden">
 
         {/* Header */}
         <header className="p-5 border-b border-slate-800 flex items-center gap-4 bg-slate-900/20 shrink-0">

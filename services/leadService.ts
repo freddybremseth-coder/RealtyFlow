@@ -1,49 +1,119 @@
 
 import { Lead, LeadStatus } from "../types";
-import { MOCK_LEADS } from "../constants";
-import { networkDelay } from "./supabase";
+import { supabase } from "./supabase";
 
-const STORAGE_KEY = 'rf_leads';
+// ─── snake_case ↔ camelCase ───────────────────────────────────────────────────
 
-function loadLeads(): Lead[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved) as Lead[];
-  } catch { /* ignore */ }
-  return [...(MOCK_LEADS as any[])];
+function rowToLead(row: Record<string, unknown>): Lead {
+  return {
+    id:              String(row.id ?? ''),
+    name:            String(row.name ?? ''),
+    email:           String(row.email ?? ''),
+    phone:           String(row.phone ?? ''),
+    source:          String(row.source ?? ''),
+    status:          (row.status as LeadStatus) ?? LeadStatus.NEW,
+    value:           Number(row.value ?? 0),
+    sentiment:       Number(row.sentiment ?? 50),
+    urgency:         Number(row.urgency ?? 50),
+    intent:          Number(row.intent ?? 50),
+    lastActivity:    String(row.last_activity ?? ''),
+    summary:         row.summary ? String(row.summary) : undefined,
+    brandId:         row.brand_id ? String(row.brand_id) : undefined,
+    requirements:    (row.requirements as Lead['requirements']) ?? undefined,
+    emails:          (row.emails as Lead['emails']) ?? [],
+    imageUrl:        row.image_url ? String(row.image_url) : undefined,
+  };
 }
 
-function saveLeads(leads: Lead[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(leads)); } catch { /* ignore */ }
+function leadToRow(lead: Lead): Record<string, unknown> {
+  return {
+    id:            lead.id,
+    name:          lead.name,
+    email:         lead.email,
+    phone:         lead.phone,
+    source:        lead.source,
+    status:        lead.status,
+    value:         lead.value,
+    sentiment:     lead.sentiment,
+    urgency:       lead.urgency,
+    intent:        lead.intent,
+    last_activity: lead.lastActivity,
+    summary:       lead.summary ?? null,
+    brand_id:      lead.brandId ?? null,
+    requirements:  lead.requirements ?? null,
+    emails:        lead.emails ?? [],
+    image_url:     lead.imageUrl ?? null,
+  };
 }
 
 class LeadService {
-  private leads: Lead[] = loadLeads();
+  private leads: Lead[] = [];
   private listeners: (() => void)[] = [];
+  private loaded = false;
+
+  constructor() {
+    this.init();
+  }
+
+  private async init() {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .order('id', { ascending: false });
+
+    if (error) {
+      console.error('leadService init error:', error.message);
+      this.leads = [];
+    } else {
+      this.leads = (data ?? []).map(rowToLead);
+    }
+    this.loaded = true;
+    this.notify();
+  }
 
   async getLeads(): Promise<Lead[]> {
-    await networkDelay();
+    // If not yet loaded, wait for init to complete
+    if (!this.loaded) {
+      await new Promise<void>(resolve => {
+        const unsub = this.subscribe(() => {
+          if (this.loaded) { unsub(); resolve(); }
+        });
+      });
+    }
     return this.leads;
   }
 
   async addLead(lead: Lead): Promise<void> {
-    await networkDelay();
+    const row = leadToRow(lead);
+    const { error } = await supabase.from('leads').insert(row);
+    if (error) {
+      console.error('addLead error:', error.message);
+      return;
+    }
     this.leads = [lead, ...this.leads];
-    saveLeads(this.leads);
     this.notify();
   }
 
   async updateLeadStatus(id: string, status: LeadStatus): Promise<void> {
-    await networkDelay();
+    const { error } = await supabase
+      .from('leads')
+      .update({ status })
+      .eq('id', id);
+    if (error) {
+      console.error('updateLeadStatus error:', error.message);
+      return;
+    }
     this.leads = this.leads.map(l => l.id === id ? { ...l, status } : l);
-    saveLeads(this.leads);
     this.notify();
   }
 
   async removeLead(id: string): Promise<void> {
-    await networkDelay();
+    const { error } = await supabase.from('leads').delete().eq('id', id);
+    if (error) {
+      console.error('removeLead error:', error.message);
+      return;
+    }
     this.leads = this.leads.filter(l => l.id !== id);
-    saveLeads(this.leads);
     this.notify();
   }
 

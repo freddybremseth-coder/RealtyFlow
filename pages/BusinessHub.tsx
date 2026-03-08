@@ -207,6 +207,34 @@ const ACTIVITY_FEED = [
   { text: 'Ny forespørsel via ChatGenius', sub: 'Sofia Martinsen — Business plan', time: '4t', dot: 'bg-violet-400' },
 ];
 
+// ─── Lead → InboxLead mapper ─────────────────────────────────────────────────
+
+const STATUS_PIPE_MAP: Record<string, LeadStatus> = {
+  NEW:         'ny',
+  QUALIFIED:   'kvalifisert',
+  VIEWING:     'kontaktet',
+  NEGOTIATION: 'kontaktet',
+  WON:         'vunnet',
+  LOST:        'tapt',
+};
+
+function leadToInboxLead(lead: Lead): InboxLead {
+  const kilde = (lead.brandId ?? 'soleada') as Source;
+  const status = STATUS_PIPE_MAP[lead.status] ?? 'ny';
+  return {
+    id:       lead.id,
+    navn:     lead.name,
+    epost:    lead.email,
+    telefon:  lead.phone || undefined,
+    kilde:    Object.prototype.hasOwnProperty.call(SOURCE_CONFIG, kilde) ? kilde : 'soleada',
+    status,
+    isNew:    status === 'ny',
+    melding:  lead.summary ?? `${lead.source ?? ''} henvendelse`,
+    tidspunkt: lead.lastActivity ?? '',
+    verdi:    lead.value > 0 ? lead.value : undefined,
+  };
+}
+
 // ─── Sub-komponenter ──────────────────────────────────────────────────────────
 
 const SourceTag: React.FC<{ source: Source; size?: 'sm' | 'xs' }> = ({ source, size = 'sm' }) => {
@@ -598,14 +626,22 @@ const InnboksTab: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'alle'>('alle');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showReply, setShowReply] = useState<string | null>(null);
+  const [allLeads, setAllLeads] = useState<InboxLead[]>([]);
 
-  const filtered = MOCK_LEADS.filter(l => {
+  useEffect(() => {
+    leadStore.getLeads().then(leads => setAllLeads(leads.map(leadToInboxLead)));
+    return leadStore.subscribe(() =>
+      leadStore.getLeads().then(leads => setAllLeads(leads.map(leadToInboxLead)))
+    );
+  }, []);
+
+  const filtered = allLeads.filter(l => {
     const matchKilde = filter === 'alle' || l.kilde === filter;
     const matchStatus = statusFilter === 'alle' || l.status === statusFilter;
     return matchKilde && matchStatus;
   });
 
-  const nyeLeads = MOCK_LEADS.filter(l => l.isNew).length;
+  const nyeLeads = allLeads.filter(l => l.isNew).length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -616,7 +652,7 @@ const InnboksTab: React.FC = () => {
             <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
             <span className="text-xs font-bold text-cyan-400">{nyeLeads} nye leads</span>
           </div>
-          <span className="text-xs text-slate-500">{MOCK_LEADS.length} totalt</span>
+          <span className="text-xs text-slate-500">{allLeads.length} totalt</span>
         </div>
         <button className="flex items-center gap-2 text-xs text-slate-500 hover:text-white transition-all">
           <RefreshCw size={12} /> Oppdater
@@ -756,6 +792,15 @@ const InnboksTab: React.FC = () => {
 };
 
 const CrmTab: React.FC = () => {
+  const [allLeads, setAllLeads] = useState<InboxLead[]>([]);
+
+  useEffect(() => {
+    leadStore.getLeads().then(leads => setAllLeads(leads.map(leadToInboxLead)));
+    return leadStore.subscribe(() =>
+      leadStore.getLeads().then(leads => setAllLeads(leads.map(leadToInboxLead)))
+    );
+  }, []);
+
   const cols: { status: LeadStatus; label: string; color: string }[] = [
     { status: 'ny',          label: 'Ny',          color: 'bg-cyan-500' },
     { status: 'kontaktet',   label: 'Kontaktet',   color: 'bg-indigo-500' },
@@ -768,7 +813,7 @@ const CrmTab: React.FC = () => {
       {/* Pipeline-verdi */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {cols.map(col => {
-          const leads = MOCK_LEADS.filter(l => l.status === col.status);
+          const leads = allLeads.filter(l => l.status === col.status);
           const verdi = leads.reduce((s, l) => s + (l.verdi || 0), 0);
           return (
             <div key={col.status} className="glass p-4 rounded-2xl border border-slate-800 space-y-2">
@@ -786,7 +831,7 @@ const CrmTab: React.FC = () => {
       {/* Kanban */}
       <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar">
         {cols.map(col => {
-          const leads = MOCK_LEADS.filter(l => l.status === col.status);
+          const leads = allLeads.filter(l => l.status === col.status);
           return (
             <div key={col.status} className="w-72 flex-shrink-0 flex flex-col gap-3">
               <div className="flex items-center gap-2 px-1">
@@ -1062,6 +1107,16 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode; badge?: number }[
 
 const BusinessHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('oversikt');
+  const [headerLeads, setHeaderLeads] = useState<InboxLead[]>([]);
+
+  useEffect(() => {
+    leadStore.getLeads().then(leads => setHeaderLeads(leads.map(leadToInboxLead)));
+    return leadStore.subscribe(() =>
+      leadStore.getLeads().then(leads => setHeaderLeads(leads.map(leadToInboxLead)))
+    );
+  }, []);
+
+  const newHeaderLeads = headerLeads.filter(l => l.isNew).slice(0, 2);
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -1076,16 +1131,16 @@ const BusinessHub: React.FC = () => {
             <h1 className="text-3xl sm:text-4xl font-bold neon-text text-cyan-400">Business Hub</h1>
           </div>
           <p className="text-slate-400 text-sm">
-            Sentralisert oversikt · {Object.keys(SOURCE_CONFIG).length} nettsider · {MOCK_LEADS.length} aktive leads
+            Sentralisert oversikt · {Object.keys(SOURCE_CONFIG).length} nettsider · {headerLeads.length} aktive leads
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {MOCK_LEADS.filter(l => l.isNew).map(l => (
+          {newHeaderLeads.map(l => (
             <div key={l.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               <span className="text-[10px] font-bold text-cyan-400">Ny fra {SOURCE_CONFIG[l.kilde].shortLabel}</span>
             </div>
-          )).slice(0, 2)}
+          ))}
         </div>
       </header>
 
