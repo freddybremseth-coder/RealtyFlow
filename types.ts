@@ -367,6 +367,7 @@ export interface Customer {
   tags?: string[];
   budget?: number;
   location?: string;
+  emails?: EmailMessage[];   // full e-posthistorikk
 }
 
 // ─── KALENDER / AVTALER ───────────────────────────────────────────────────────

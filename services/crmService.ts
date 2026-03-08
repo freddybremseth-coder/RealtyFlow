@@ -1,5 +1,5 @@
 
-import { Customer, CustomerStatus, CustomerType, Lead } from '../types';
+import { Customer, CustomerStatus, CustomerType, Lead, EmailMessage } from '../types';
 
 const STORAGE_KEY = 'rf_crm_customers';
 
@@ -22,6 +22,32 @@ const MOCK_CUSTOMERS: Customer[] = [
     tags: ['VIP', 'Klar kjøper'],
     propertiesInterested: [],
     propertiesBought: [],
+    emails: [
+      {
+        id: 'em1',
+        date: '2026-01-16T09:15:00Z',
+        from: 'erik.lindstrom@email.com',
+        subject: 'Henvendelse om villa Costa Blanca',
+        body: 'Hei!\n\nJeg fant nettsiden deres og er veldig interessert i å kjøpe en villa på Costa Blanca Nord. Budsjettet mitt er rundt €900.000. Har dere noe passende?\n\nMvh, Erik',
+        isIncoming: true,
+      },
+      {
+        id: 'em2',
+        date: '2026-01-17T11:30:00Z',
+        from: 'freddy@soleada.no',
+        subject: 'Re: Henvendelse om villa Costa Blanca',
+        body: 'Hei Erik!\n\nTusen takk for din henvendelse. Vi har nettopp fått inn to fantastiske villaer som passer perfekt til ditt budsjett. Jeg sender deg prospektene i morgen.\n\nMvh, Freddy',
+        isIncoming: false,
+      },
+      {
+        id: 'em3',
+        date: '2026-02-28T14:00:00Z',
+        from: 'erik.lindstrom@email.com',
+        subject: 'Re: Henvendelse om villa Costa Blanca',
+        body: 'Hei Freddy,\n\nJeg har sett på prospektene – villa nr. 2 i Altea virker veldig interessant. Er det mulig å avtale en visning i mars?\n\nMvh, Erik',
+        isIncoming: true,
+      },
+    ],
   },
   {
     id: 'c2',
@@ -123,6 +149,19 @@ class CrmService {
       this.addCustomer(customer);
     }
     return customer;
+  }
+
+  addEmailToCustomer(customerId: string, email: EmailMessage): void {
+    this.customers = this.customers.map(c => {
+      if (c.id !== customerId) return c;
+      return {
+        ...c,
+        emails: [...(c.emails ?? []), email],
+        lastContact: new Date().toISOString(),
+      };
+    });
+    save(this.customers);
+    this.notify();
   }
 
   removeCustomer(id: string): void {
