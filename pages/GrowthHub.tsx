@@ -238,11 +238,10 @@ const GrowthHub: React.FC = () => {
     setIsGeneratingGuide(true);
     setActiveTab('guide');
     try {
-      const brandName = brands.find(b => b.id === selectedBrandId)?.name || 'default';
-      const res = await gemini.generateZenEcoGuide(brandName);
+      const res = await gemini.generateZenEcoGuide(selectedBrandId);
       setZenGuide(res);
-    } catch (e) {
-      alert("Feil ved generering av kjøperguide.");
+    } catch (e: any) {
+      alert(e?.message || "Feil ved generering av kjøperguide.");
     } finally {
       setIsGeneratingGuide(false);
     }
