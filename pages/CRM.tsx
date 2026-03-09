@@ -574,7 +574,7 @@ const CRM: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     const customer: Customer = {
-      id: `crm-${Date.now()}`,
+      id: crypto.randomUUID(),
       name: form.name,
       email: form.email,
       phone: form.phone,

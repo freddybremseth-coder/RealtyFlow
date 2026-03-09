@@ -104,7 +104,7 @@ function rowToLead(
   brandId: string,
 ): Lead | null {
   const lead: Partial<Lead> = {
-    id:           `csv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id:           crypto.randomUUID(),
     status:       LeadStatus.NEW,
     brandId,
     source:       'CSV Import',
