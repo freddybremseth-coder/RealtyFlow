@@ -18,11 +18,24 @@ import {
 import { gemini } from '../services/claudeService';
 
 const COLUMNS = [
-  { id: LeadStatus.NEW, label: 'New', color: 'bg-cyan-500' },
-  { id: LeadStatus.QUALIFIED, label: 'Qual', color: 'bg-indigo-500' },
-  { id: LeadStatus.VIEWING, label: 'Views', color: 'bg-emerald-500' },
-  { id: LeadStatus.NEGOTIATION, label: 'Negot', color: 'bg-amber-500' },
-  { id: LeadStatus.WON, label: 'Won', color: 'bg-fuchsia-500' },
+  { id: LeadStatus.NEW,         label: 'Ny',           color: 'bg-cyan-500'    },
+  { id: LeadStatus.CONTACT,     label: 'Kontaktfase',  color: 'bg-blue-500'    },
+  { id: LeadStatus.QUALIFIED,   label: 'Kvalifisert',  color: 'bg-indigo-500'  },
+  { id: LeadStatus.VIEWING,     label: 'Visning',      color: 'bg-emerald-500' },
+  { id: LeadStatus.NEGOTIATION, label: 'Forhandling',  color: 'bg-amber-500'   },
+  { id: LeadStatus.WON,         label: 'Kunde',        color: 'bg-fuchsia-500' },
+  { id: LeadStatus.ON_HOLD,     label: 'På vent',      color: 'bg-slate-500'   },
+];
+
+const STATUS_ACTIONS: { status: LeadStatus; label: string; color: string; bg: string }[] = [
+  { status: LeadStatus.NEW,         label: 'Ny',          color: 'text-cyan-400',    bg: 'border-cyan-500/30 hover:bg-cyan-500/10'    },
+  { status: LeadStatus.CONTACT,     label: 'Kontaktfase', color: 'text-blue-400',    bg: 'border-blue-500/30 hover:bg-blue-500/10'    },
+  { status: LeadStatus.QUALIFIED,   label: 'Kvalifisert', color: 'text-indigo-400',  bg: 'border-indigo-500/30 hover:bg-indigo-500/10'},
+  { status: LeadStatus.VIEWING,     label: 'Visning',     color: 'text-emerald-400', bg: 'border-emerald-500/30 hover:bg-emerald-500/10'},
+  { status: LeadStatus.NEGOTIATION, label: 'Forhandling', color: 'text-amber-400',   bg: 'border-amber-500/30 hover:bg-amber-500/10'  },
+  { status: LeadStatus.WON,         label: 'Kunde',       color: 'text-fuchsia-400', bg: 'border-fuchsia-500/30 hover:bg-fuchsia-500/10'},
+  { status: LeadStatus.ON_HOLD,     label: 'På vent',     color: 'text-slate-400',   bg: 'border-slate-500/30 hover:bg-slate-500/10'  },
+  { status: LeadStatus.LOST,        label: 'Tapt',        color: 'text-red-400',     bg: 'border-red-500/30 hover:bg-red-500/10'      },
 ];
 
 const Pipeline: React.FC = () => {
@@ -38,6 +51,7 @@ const Pipeline: React.FC = () => {
   const [activeDetailTab, setActiveDetailTab] = useState<'info' | 'emails' | 'strategy'>('info');
   const [emailAnalysis, setEmailAnalysis] = useState<any>(null);
   const [isAnalyzingEmails, setIsAnalyzingEmails] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   
   const [newLead, setNewLead] = useState({
     name: '', email: '', value: '', notes: '',
@@ -130,6 +144,20 @@ const Pipeline: React.FC = () => {
     setSelectedLead(lead);
     setEmailAnalysis(null);
     setActiveDetailTab('info');
+    setConfirmDelete(false);
+  };
+
+  const handleStatusChange = async (status: LeadStatus) => {
+    if (!selectedLead) return;
+    await leadStore.updateLeadStatus(selectedLead.id, status);
+    setSelectedLead(prev => prev ? { ...prev, status } : null);
+  };
+
+  const handleDeleteLead = async () => {
+    if (!selectedLead) return;
+    await leadStore.removeLead(selectedLead.id);
+    setSelectedLead(null);
+    setConfirmDelete(false);
   };
 
   const handleConvertToCustomer = (lead: Lead) => {
@@ -344,22 +372,51 @@ const Pipeline: React.FC = () => {
       {selectedLead && (
         <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex justify-end animate-in slide-in-from-right duration-300">
           <div className="w-full lg:w-[700px] bg-[#0a0a0c] border-l border-slate-800 h-full flex flex-col shadow-2xl">
-             <header className="p-4 sm:p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/20">
-                <div><h2 className="text-lg sm:text-2xl font-bold text-white">{selectedLead.name}</h2><p className="text-xs text-slate-500">{selectedLead.email}</p></div>
-                <div className="flex items-center gap-2">
-                  {convertedLeadIds.has(selectedLead.id) ? (
-                    <span className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
-                      <UserCheck size={14} /> Konvertert
-                    </span>
-                  ) : (
+             <header className="p-4 sm:p-6 border-b border-slate-800 bg-slate-900/20">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-lg sm:text-2xl font-bold text-white">{selectedLead.name}</h2>
+                    <p className="text-xs text-slate-500">{selectedLead.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {convertedLeadIds.has(selectedLead.id) ? (
+                      <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+                        <UserCheck size={14} /> Konvertert
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleConvertToCustomer(selectedLead)}
+                        className="flex items-center gap-2 px-3 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+                      >
+                        <UserCheck size={14} /> Gjør til Kunde
+                      </button>
+                    )}
+                    <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-800 rounded-full"><X size={24} /></button>
+                  </div>
+                </div>
+
+                {/* ── Statusvalg ── */}
+                <div className="flex flex-wrap gap-1.5">
+                  {STATUS_ACTIONS.map(sa => (
                     <button
-                      onClick={() => handleConvertToCustomer(selectedLead)}
-                      className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+                      key={sa.status}
+                      onClick={() => handleStatusChange(sa.status)}
+                      className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${sa.color} ${sa.bg} ${selectedLead.status === sa.status ? 'ring-1 ring-current opacity-100' : 'opacity-50 hover:opacity-100'}`}
                     >
-                      <UserCheck size={14} /> Gjør til Kunde
+                      {sa.label}
                     </button>
+                  ))}
+
+                  {/* Slett-knapp */}
+                  {confirmDelete ? (
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <span className="text-[10px] text-red-400 font-bold">Sikker?</span>
+                      <button onClick={handleDeleteLead} className="px-3 py-1.5 rounded-lg border border-red-500/50 bg-red-500/20 text-red-400 text-[10px] font-bold hover:bg-red-500/40 transition-all">Ja, slett</button>
+                      <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-400 text-[10px] font-bold hover:bg-slate-800 transition-all">Avbryt</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmDelete(true)} className="ml-auto px-3 py-1.5 rounded-lg border border-red-900/40 text-red-500 text-[10px] font-bold hover:bg-red-500/10 transition-all flex items-center gap-1"><Trash2 size={11} /> Slett</button>
                   )}
-                  <button onClick={() => setSelectedLead(null)} className="p-2 hover:bg-slate-800 rounded-full"><X size={24} /></button>
                 </div>
              </header>
 

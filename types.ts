@@ -10,10 +10,12 @@ export enum AppLanguage {
 
 export enum LeadStatus {
   NEW = 'NEW',
+  CONTACT = 'CONTACT',
   QUALIFIED = 'QUALIFIED',
   VIEWING = 'VIEWING',
   NEGOTIATION = 'NEGOTIATION',
   WON = 'WON',
+  ON_HOLD = 'ON_HOLD',
   LOST = 'LOST'
 }
 
