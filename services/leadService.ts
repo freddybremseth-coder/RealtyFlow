@@ -86,8 +86,7 @@ class LeadService {
     const row = leadToRow(lead);
     const { error } = await supabase.from('leads').insert(row);
     if (error) {
-      console.error('addLead error:', error.message);
-      return;
+      throw new Error(error.message);
     }
     this.leads = [lead, ...this.leads];
     this.notify();

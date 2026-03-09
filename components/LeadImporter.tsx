@@ -37,7 +37,7 @@ interface FileJob {
   mapping: Record<string, LeadField | ''>;
   aiConfidence: Record<string, number>;   // 0–1 per kolonne
   status: 'queued' | 'ai-mapping' | 'ready' | 'importing' | 'done' | 'error';
-  result?: { success: number; errors: number };
+  result?: { success: number; errors: number; errorMsg?: string };
   errorMsg?: string;
 }
 
@@ -251,8 +251,22 @@ const LeadImporter: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
       for (const row of job.rows) {
         const lead = rowToLead(row, job.mapping, brandId);
         if (lead) {
-          await leadStore.addLead(lead);
-          success++;
+          try {
+            await leadStore.addLead(lead);
+            success++;
+          } catch (err: any) {
+            console.error('addLead failed:', err.message);
+            errors++;
+            // Stop on first error so we see the message, not 179 silent failures
+            if (errors === 1) {
+              updateJob(job.id, { status: 'done', result: { success, errors, errorMsg: err.message } });
+              totalSuccess += success;
+              totalErrors  += errors;
+              setTotalResult({ success: totalSuccess, errors: totalErrors });
+              setStep(4);
+              return;
+            }
+          }
         } else {
           errors++;
         }
@@ -565,20 +579,37 @@ const LeadImporter: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
           )}
 
           {/* ── STEG 4: Ferdig ───────────────────────────────────────── */}
-          {step === 4 && (
+          {step === 4 && (() => {
+            const firstError = jobs.find(j => j.result?.errorMsg)?.result?.errorMsg;
+            const hasError = totalResult.errors > 0 && totalResult.success === 0;
+            return (
             <div className="flex flex-col items-center justify-center gap-6 py-12 text-center">
-              <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                <CheckCircle2 size={40} className="text-emerald-400" />
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center ${hasError ? 'bg-red-500/10 border border-red-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
+                {hasError
+                  ? <AlertTriangle size={40} className="text-red-400" />
+                  : <CheckCircle2 size={40} className="text-emerald-400" />
+                }
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white mb-1">Import fullført!</h3>
+                <h3 className="text-2xl font-bold text-white mb-1">
+                  {hasError ? 'Import feilet' : 'Import fullført!'}
+                </h3>
                 <p className="text-slate-400 text-sm">
                   <span className="text-emerald-400 font-bold">{totalResult.success}</span> leads lagt til ·{' '}
-                  <span className={totalResult.errors > 0 ? 'text-amber-400' : 'text-slate-600'}>
-                    {totalResult.errors} hoppet over
+                  <span className={totalResult.errors > 0 ? 'text-red-400' : 'text-slate-600'}>
+                    {totalResult.errors} feil
                   </span>
                 </p>
               </div>
+
+              {/* Feilmelding fra Supabase */}
+              {firstError && (
+                <div className="w-full max-w-sm px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300 text-left space-y-1">
+                  <p className="font-bold text-red-400">Supabase-feil:</p>
+                  <p className="font-mono break-all">{firstError}</p>
+                  <p className="text-slate-500 mt-2">Kjør SQL-migrasjonen <span className="font-mono text-slate-400">004_leads_full_setup.sql</span> i Supabase Dashboard og prøv igjen.</p>
+                </div>
+              )}
 
               {/* Per-fil resultat */}
               <div className="w-full max-w-sm space-y-2">
@@ -588,7 +619,7 @@ const LeadImporter: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
                     <span className="flex-1 truncate text-slate-400">{job.file.name}</span>
                     <span className="text-emerald-400 font-bold">{job.result?.success ?? 0} OK</span>
                     {(job.result?.errors ?? 0) > 0 && (
-                      <span className="text-amber-500">{job.result!.errors} feil</span>
+                      <span className="text-red-400">{job.result!.errors} feil</span>
                     )}
                   </div>
                 ))}
@@ -609,7 +640,8 @@ const LeadImporter: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
                 </button>
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </div>
