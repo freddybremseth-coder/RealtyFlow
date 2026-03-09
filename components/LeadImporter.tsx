@@ -13,20 +13,23 @@ import { settingsStore } from '../services/settingsService';
 // ─── Typer ────────────────────────────────────────────────────────────────────
 
 type LeadField =
-  | 'name' | 'email' | 'phone' | 'location'
+  | 'firstName' | 'lastName' | 'name'
+  | 'email' | 'phone' | 'location'
   | 'budget' | 'source' | 'notes' | 'nationality' | '_skip';
 
 const LEAD_FIELDS: { value: LeadField | ''; label: string }[] = [
-  { value: '',           label: '— Ikke importer —' },
-  { value: 'name',       label: 'Navn'              },
-  { value: 'email',      label: 'E-post'            },
-  { value: 'phone',      label: 'Telefon'           },
-  { value: 'location',   label: 'Sted / By'         },
-  { value: 'budget',     label: 'Budsjett'          },
-  { value: 'source',     label: 'Kilde'             },
-  { value: 'nationality',label: 'Nasjonalitet'      },
-  { value: 'notes',      label: 'Notater / Melding' },
-  { value: '_skip',      label: '× Hopp over'       },
+  { value: '',           label: '— Ikke importer —'   },
+  { value: 'firstName',  label: 'Fornavn'              },
+  { value: 'lastName',   label: 'Etternavn'            },
+  { value: 'name',       label: 'Fullt navn'           },
+  { value: 'email',      label: 'E-post'               },
+  { value: 'phone',      label: 'Telefon'              },
+  { value: 'location',   label: 'Sted / By'            },
+  { value: 'budget',     label: 'Budsjett'             },
+  { value: 'source',     label: 'Kilde'                },
+  { value: 'nationality',label: 'Nasjonalitet'         },
+  { value: 'notes',      label: 'Notater / Melding'    },
+  { value: '_skip',      label: '× Hopp over'          },
 ];
 
 interface FileJob {
@@ -58,15 +61,17 @@ Eksempelrader:
 ${sample}
 
 Mapp HVER kolonne til ett av disse lead-feltene:
-name (navn, kundenavn, fornavn+etternavn, full name, kunde, kontakt, person)
+firstName (fornavn, first name, forname, first_name, fname, given name)
+lastName (etternavn, last name, surname, last_name, lname, family name, etternavn)
+name (fullt navn, full name, navn, kundenavn, kunde, kontakt, person — bruk KUN hvis kolonnen inneholder fornavn+etternavn samlet)
 email (e-post, epost, mail, email)
-phone (telefon, tlf, mobil, phone, cel)
-location (sted, by, adresse, city, location, område, region, land)
+phone (telefon, tlf, mobil, phone, cel, kontaktnummer)
+location (sted, by, adresse, city, location, område, region)
 budget (budsjett, budget, pris, price, verdi, økonomi)
 source (kilde, how found, kanal, campaign)
 nationality (nasjonalitet, nationality, land, country)
 notes (melding, message, kommentar, comment, tekst, info)
-_skip (irrelevant, id, dato, internt felt som ikke er nyttig for CRM)
+_skip (irrelevant, id, dato, løpenummer, internt felt)
 
 Svar KUN med gyldig JSON slik:
 {"KolonneNavn": {"field": "name", "confidence": 0.95}, ...}
@@ -119,6 +124,8 @@ function rowToLead(
 
   const summaryParts: string[] = [];
   const requirements: Record<string, unknown> = {};
+  let firstName = '';
+  let lastName  = '';
 
   for (const [header, field] of Object.entries(mapping)) {
     if (!field || field === '_skip') continue;
@@ -126,6 +133,8 @@ function rowToLead(
     if (!val) continue;
 
     switch (field) {
+      case 'firstName':   firstName = val; break;
+      case 'lastName':    lastName  = val; break;
       case 'name':        lead.name   = val; break;
       case 'email':       lead.email  = val; break;
       case 'phone':       lead.phone  = val; break;
@@ -142,9 +151,15 @@ function rowToLead(
     }
   }
 
+  // Sett fullt navn fra fornavn + etternavn hvis name ikke er satt direkte
+  if (!lead.name) {
+    const combined = [firstName, lastName].filter(Boolean).join(' ');
+    lead.name = combined || undefined;
+  }
+
   lead.requirements = requirements as Lead['requirements'];
 
-  if (!lead.name && !lead.email) return null; // trenger minst ett identifiserende felt
+  if (!lead.name && !lead.email) return null;
   if (!lead.name) lead.name = lead.email ?? 'Ukjent';
   lead.summary = summaryParts.join(' • ') || 'Importert via CSV';
 

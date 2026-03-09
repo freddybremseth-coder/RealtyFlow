@@ -5,9 +5,16 @@ import { supabase } from "./supabase";
 // ─── snake_case ↔ camelCase ───────────────────────────────────────────────────
 
 function rowToLead(row: Record<string, unknown>): Lead {
+  // Kombiner first_name + last_name → name, fall back til name-kolonnen
+  const firstName = row.first_name ? String(row.first_name).trim() : '';
+  const lastName  = row.last_name  ? String(row.last_name).trim()  : '';
+  const fullName  = firstName || lastName
+    ? [firstName, lastName].filter(Boolean).join(' ')
+    : String(row.name ?? '');
+
   return {
     id:              String(row.id ?? ''),
-    name:            String(row.name ?? ''),
+    name:            fullName,
     email:           String(row.email ?? ''),
     phone:           String(row.phone ?? ''),
     source:          String(row.source ?? ''),
@@ -26,9 +33,15 @@ function rowToLead(row: Record<string, unknown>): Lead {
 }
 
 function leadToRow(lead: Lead): Record<string, unknown> {
+  const parts = lead.name?.trim().split(/\s+/) ?? [];
+  const firstName = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0] ?? '';
+  const lastName  = parts.length > 1 ? parts[parts.length - 1] : '';
+
   return {
     id:            lead.id,
     name:          lead.name,
+    first_name:    firstName,
+    last_name:     lastName,
     email:         lead.email,
     phone:         lead.phone,
     source:        lead.source,
