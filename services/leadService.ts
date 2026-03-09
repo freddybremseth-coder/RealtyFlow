@@ -33,16 +33,15 @@ function leadToRow(lead: Lead): Record<string, unknown> {
     phone:         lead.phone,
     source:        lead.source,
     status:        lead.status,
-    value:         lead.value,
-    sentiment:     lead.sentiment,
-    urgency:       lead.urgency,
-    intent:        lead.intent,
-    last_activity: lead.lastActivity,
+    value:         lead.value ?? 0,
+    sentiment:     lead.sentiment ?? 50,
+    urgency:       lead.urgency ?? 50,
+    intent:        lead.intent ?? 50,
+    last_activity: lead.lastActivity ?? '',
     summary:       lead.summary ?? null,
-    brand_id:      lead.brandId ?? null,
-    requirements:  lead.requirements ?? null,
+    brand_id:      lead.brandId ?? '',
+    requirements:  lead.requirements ?? {},
     emails:        lead.emails ?? [],
-    image_url:     lead.imageUrl ?? null,
   };
 }
 
