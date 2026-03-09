@@ -291,7 +291,7 @@ const GrowthHub: React.FC = () => {
                   >
                     <div className="flex items-center gap-3">
                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center">
-                          {b.logo_url ? <img src={b.logo_url} className="w-full h-full object-contain" /> : <Building2 size={16} />}
+                          {b.logo ? <img src={b.logo} className="w-full h-full object-contain" /> : <Building2 size={16} />}
                        </div>
                        {b.name}
                     </div>
@@ -484,7 +484,192 @@ const GrowthHub: React.FC = () => {
                 )}
              </div>
            )}
-           {/* Other tabs follow the same pattern */}
+           {activeTab === 'guide' && (
+             <div className="space-y-6">
+               <div className="glass p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-slate-800 shadow-2xl">
+                 <div className="flex justify-between items-center mb-8">
+                   <h3 className="text-xl font-bold text-white flex items-center gap-3"><FileCheck className="text-emerald-400" size={24} /> Zen Eco Kjøperguide</h3>
+                   {zenGuide && (
+                     <button
+                       onClick={() => handlePublishArticle(zenGuide, `${brands.find(b => b.id === selectedBrandId)?.name || 'Brand'} Kjøperguide`, 'guide')}
+                       disabled={isPublishing}
+                       className="px-6 py-3 bg-emerald-500 text-slate-950 rounded-2xl font-bold flex items-center gap-2 hover:bg-emerald-400 disabled:opacity-50 transition-all"
+                     >
+                       {isPublishing ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+                       Publiser Guide
+                     </button>
+                   )}
+                 </div>
+                 {isGeneratingGuide ? (
+                   <div className="flex flex-col items-center justify-center py-24 gap-6">
+                     <Loader2 className="animate-spin text-emerald-400" size={48} />
+                     <p className="text-slate-400 font-mono text-sm uppercase tracking-widest">Genererer kjøperguide...</p>
+                   </div>
+                 ) : zenGuide ? (
+                   <div className="prose prose-invert prose-emerald max-w-none text-slate-300 leading-relaxed">
+                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{zenGuide}</ReactMarkdown>
+                   </div>
+                 ) : (
+                   <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
+                     <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                       <FileCheck className="text-emerald-400" size={36} />
+                     </div>
+                     <div>
+                       <p className="text-slate-300 font-bold mb-2">Ingen guide generert ennå</p>
+                       <p className="text-slate-500 text-sm">Klikk "Generer Zen Eco Guide" i sidepanelet for å lage en skreddersydd kjøperguide for valgt merkevare.</p>
+                     </div>
+                   </div>
+                 )}
+               </div>
+             </div>
+           )}
+
+           {activeTab === 'automation' && (
+             <div className="space-y-6">
+               <div className="glass p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-slate-800 shadow-2xl">
+                 <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-10"><Workflow className="text-cyan-400" size={24} /> Autopilot Innstillinger</h3>
+                 <div className="space-y-4">
+                   {[
+                     { key: 'marketPulseEnabled' as keyof AutomationSettings, label: 'Market Pulse', desc: 'Automatisk markedsanalyse og trender hver uke.', icon: TrendingUp, onCls: 'border-cyan-500/40 bg-cyan-500/5', iconOnCls: 'bg-cyan-500/20 text-cyan-400', toggleCls: 'text-cyan-400' },
+                     { key: 'brandIdentityGuardEnabled' as keyof AutomationSettings, label: 'Brand Identity Guard', desc: 'Varsler hvis innhold avviker fra merkevare-tonen.', icon: ShieldAlert, onCls: 'border-violet-500/40 bg-violet-500/5', iconOnCls: 'bg-violet-500/20 text-violet-400', toggleCls: 'text-violet-400' },
+                     { key: 'socialSyncEnabled' as keyof AutomationSettings, label: 'Social Sync', desc: 'Publiser kampanjer automatisk til sosiale medier.', icon: Share2, onCls: 'border-indigo-500/40 bg-indigo-500/5', iconOnCls: 'bg-indigo-500/20 text-indigo-400', toggleCls: 'text-indigo-400' },
+                     { key: 'leadNurtureEnabled' as keyof AutomationSettings, label: 'Lead Nurture', desc: 'Automatisk oppfølging og e-postsekvenser til leads.', icon: Magnet, onCls: 'border-emerald-500/40 bg-emerald-500/5', iconOnCls: 'bg-emerald-500/20 text-emerald-400', toggleCls: 'text-emerald-400' },
+                   ].map(({ key, label, desc, icon: Icon, onCls, iconOnCls, toggleCls }) => {
+                     const isOn = !!automation[key];
+                     return (
+                       <div key={key} onClick={() => toggleAutomation(key)}
+                         className={`flex items-center justify-between p-6 rounded-2xl border cursor-pointer transition-all ${isOn ? onCls : 'border-slate-800 hover:border-slate-700'}`}
+                       >
+                         <div className="flex items-center gap-5">
+                           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isOn ? iconOnCls.split(' ')[0] : 'bg-slate-900'}`}>
+                             <Icon size={20} className={isOn ? iconOnCls.split(' ')[1] : 'text-slate-600'} />
+                           </div>
+                           <div>
+                             <p className={`font-bold text-sm ${isOn ? 'text-white' : 'text-slate-400'}`}>{label}</p>
+                             <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                           </div>
+                         </div>
+                         {isOn
+                           ? <ToggleRight size={32} className={`${toggleCls} flex-shrink-0`} />
+                           : <ToggleLeft size={32} className="text-slate-700 flex-shrink-0" />
+                         }
+                       </div>
+                     );
+                   })}
+                 </div>
+               </div>
+             </div>
+           )}
+
+           {activeTab === 'stats' && (
+             <div className="space-y-6">
+               <div className="glass p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-slate-800 shadow-2xl">
+                 <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-10"><BarChart3 className="text-cyan-400" size={24} /> Analytics — Siste 7 dager</h3>
+                 <div className="grid grid-cols-3 gap-4 mb-10">
+                   {[
+                     { label: 'Total klikk', value: ANALYTICS_DATA.reduce((s, d) => s + d.clicks, 0).toLocaleString('nb-NO'), icon: MousePointer, color: 'cyan' },
+                     { label: 'Nye leads', value: ANALYTICS_DATA.reduce((s, d) => s + d.leads, 0).toLocaleString('nb-NO'), icon: Users, color: 'emerald' },
+                     { label: 'Snitt konv.', value: `${Math.round(ANALYTICS_DATA.reduce((s, d) => s + d.conversion, 0) / ANALYTICS_DATA.length)}%`, icon: TrendingUp, color: 'indigo' },
+                   ].map(({ label, value, icon: Icon, color }) => (
+                     <div key={label} className={`p-6 bg-slate-950 rounded-2xl border border-${color}-500/20 text-center`}>
+                       <Icon size={20} className={`text-${color}-400 mx-auto mb-3`} />
+                       <div className={`text-3xl font-bold text-${color}-400`}>{value}</div>
+                       <div className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">{label}</div>
+                     </div>
+                   ))}
+                 </div>
+                 <div className="space-y-8">
+                   <div>
+                     <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-4">Klikk per dag</p>
+                     <ResponsiveContainer width="100%" height={200}>
+                       <ReBarChart data={ANALYTICS_DATA} barSize={32}>
+                         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                         <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
+                         <YAxis tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
+                         <Tooltip contentStyle={{ background: '#0a0a0c', border: '1px solid #1e293b', borderRadius: '12px', color: '#e2e8f0' }} />
+                         <Bar dataKey="clicks" radius={[8, 8, 0, 0]}>
+                           {ANALYTICS_DATA.map((_, i) => <Cell key={i} fill="#06b6d4" fillOpacity={0.7 + i * 0.04} />)}
+                         </Bar>
+                       </ReBarChart>
+                     </ResponsiveContainer>
+                   </div>
+                   <div>
+                     <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-4">Leads per dag</p>
+                     <ResponsiveContainer width="100%" height={200}>
+                       <ReBarChart data={ANALYTICS_DATA} barSize={32}>
+                         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                         <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
+                         <YAxis tick={{ fill: '#475569', fontSize: 11 }} axisLine={false} tickLine={false} />
+                         <Tooltip contentStyle={{ background: '#0a0a0c', border: '1px solid #1e293b', borderRadius: '12px', color: '#e2e8f0' }} />
+                         <Bar dataKey="leads" radius={[8, 8, 0, 0]}>
+                           {ANALYTICS_DATA.map((_, i) => <Cell key={i} fill="#10b981" fillOpacity={0.7 + i * 0.04} />)}
+                         </Bar>
+                       </ReBarChart>
+                     </ResponsiveContainer>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           )}
+
+           {activeTab === 'library' && (
+             <div className="space-y-6">
+               <div className="glass p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] border border-slate-800 shadow-2xl">
+                 <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-8"><Library className="text-cyan-400" size={24} /> Kampanjebibliotek</h3>
+                 {savedCampaigns.length === 0 ? (
+                   <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
+                     <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center">
+                       <Archive className="text-slate-600" size={36} />
+                     </div>
+                     <div>
+                       <p className="text-slate-300 font-bold mb-2">Biblioteket er tomt</p>
+                       <p className="text-slate-500 text-sm">Lagre kampanjer fra Viral Engine for å gjenbruke dem her.</p>
+                     </div>
+                   </div>
+                 ) : (
+                   <div className="space-y-4">
+                     {savedCampaigns.map(c => (
+                       <div key={c.id} className="p-6 bg-slate-950 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all">
+                         <div className="flex justify-between items-start gap-4">
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-3 mb-2">
+                               <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">{c.brandId}</span>
+                               <span className="text-[10px] text-slate-600">{c.date}</span>
+                             </div>
+                             <p className="font-bold text-white text-sm mb-2 truncate">{c.headline}</p>
+                             <p className="text-slate-500 text-xs line-clamp-2">{c.body}</p>
+                           </div>
+                           {c.imageUrl && (
+                             <img src={c.imageUrl} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 border border-slate-800" />
+                           )}
+                         </div>
+                         <div className="flex gap-2 mt-4">
+                           <button
+                             onClick={() => handlePublishArticle(c.body, c.headline, 'blog_post')}
+                             className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition-all flex items-center gap-2"
+                           >
+                             <Send size={12} /> Publiser
+                           </button>
+                           <button
+                             onClick={() => { setObjective(c.objective); setActiveTab('ads'); }}
+                             className="px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl text-xs font-bold hover:bg-cyan-500/20 transition-all flex items-center gap-2"
+                           >
+                             <RefreshCw size={12} /> Gjenbruk
+                           </button>
+                           <button
+                             onClick={() => { navigator.clipboard.writeText(`${c.headline}\n\n${c.body}`); }}
+                             className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl text-xs font-bold hover:text-white transition-all flex items-center gap-2"
+                           >
+                             <Copy size={12} /> Kopier
+                           </button>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </div>
+             </div>
+           )}
         </div>
       </div>
       <style>{`.shadow-3xl { box-shadow: 0 0 80px rgba(0,0,0,0.8); } .custom-scrollbar::-webkit-scrollbar { width: 6px; }`}</style>
