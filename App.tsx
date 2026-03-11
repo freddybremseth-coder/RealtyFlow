@@ -11,7 +11,6 @@ import { supabase } from './services/supabase';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Pipeline = lazy(() => import('./pages/Pipeline'));
 const ImageStudio = lazy(() => import('./pages/ImageStudio'));
-const MarketPulse = lazy(() => import('./pages/MarketPulse'));
 const ContentCMS = lazy(() => import('./pages/ContentCMS'));
 const GrowthHub = lazy(() => import('./pages/GrowthHub'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -74,7 +73,6 @@ const App: React.FC = () => {
                   <Route path="/inventory" element={<Inventory />} />
                   <Route path="/tomtebase" element={<Tomtebase />} />
                   <Route path="/valuation" element={<Valuation />} />
-                  <Route path="/market" element={<MarketPulse />} />
                   <Route path="/growth" element={<GrowthHub />} />
                   <Route path="/studio" element={<ImageStudio />} />
                   <Route path="/content" element={<ContentCMS />} />
