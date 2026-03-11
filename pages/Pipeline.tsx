@@ -15,7 +15,7 @@ import {
   CheckSquare, Square, ClipboardList, Trash2, AlertTriangle, PhoneCall, History, Play, Quote, UserCheck, TrendingUp, Filter, Download, Inbox, MessageCircle,
   Webhook, ChevronDown, Building2, ShoppingBag, WifiOff
 } from 'lucide-react';
-import { gemini } from '../services/claudeService';
+import { gemini } from '../services/geminiService';
 
 const COLUMNS = [
   { id: LeadStatus.NEW,         label: 'Ny',           color: 'bg-cyan-500'    },

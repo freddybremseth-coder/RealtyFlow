@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { leadStore } from '../services/leadService';
 import { Lead, LeadStatus } from '../types';
 import LeadScoreRadar from '../components/LeadScoreRadar';
-import { gemini } from '../services/claudeService';
+import { gemini } from '../services/geminiService';
 import { isCloudConnected } from '../services/supabase';
 import { 
   TrendingUp, Users, Target, Activity, ArrowRight, Star, Sun, ChevronRight, 
