@@ -124,32 +124,32 @@ const Tomtebase: React.FC = () => {
     <div className="flex flex-col h-full bg-slate-950 text-white p-4 lg:p-8">
         <h1 className="text-3xl font-bold mb-6 text-slate-100">Tomtebase</h1>
         
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-            <div className="lg:col-span-3 bg-slate-900 p-4 rounded-lg border border-slate-800">
-                <h2 className="text-lg font-semibold mb-3">Filters</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <input type="number" name="minPrice" placeholder="Min Price" value={filters.minPrice} onChange={handleFilterChange} className="bg-slate-800 border border-slate-700 rounded p-2" />
-                    <input type="number" name="maxPrice" placeholder="Max Price" value={filters.maxPrice} onChange={handleFilterChange} className="bg-slate-800 border border-slate-700 rounded p-2" />
-                    <input type="number" name="minSize" placeholder="Min Size m²" value={filters.minSize} onChange={handleFilterChange} className="bg-slate-800 border border-slate-700 rounded p-2" />
-                    <input type="number" name="maxSize" placeholder="Max Size m²" value={filters.maxSize} onChange={handleFilterChange} className="bg-slate-800 border border-slate-700 rounded p-2" />
-                    <select name="location" value={filters.location} onChange={handleFilterChange} className="bg-slate-800 border border-slate-700 rounded p-2">
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-grow bg-slate-900 p-4 rounded-lg border border-slate-800">
+                <h2 className="text-base font-semibold mb-3">Filters</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <input type="number" name="minPrice" placeholder="Min Price" value={filters.minPrice} onChange={handleFilterChange} className="bg-slate-800 border-slate-700 rounded p-2 text-sm" />
+                    <input type="number" name="maxPrice" placeholder="Max Price" value={filters.maxPrice} onChange={handleFilterChange} className="bg-slate-800 border-slate-700 rounded p-2 text-sm" />
+                    <input type="number" name="minSize" placeholder="Min Size m²" value={filters.minSize} onChange={handleFilterChange} className="bg-slate-800 border-slate-700 rounded p-2 text-sm" />
+                    <input type="number" name="maxSize" placeholder="Max Size m²" value={filters.maxSize} onChange={handleFilterChange} className="bg-slate-800 border-slate-700 rounded p-2 text-sm" />
+                    <select name="location" value={filters.location} onChange={handleFilterChange} className="bg-slate-800 border-slate-700 rounded p-2 text-sm col-span-2 md:col-span-1">
                         <option value="">All Locations</option>
                         {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
                     </select>
-                    <select name="status" value={filters.status} onChange={handleFilterChange} className="bg-slate-800 border border-slate-700 rounded p-2">
+                    <select name="status" value={filters.status} onChange={handleFilterChange} className="bg-slate-800 border-slate-700 rounded p-2 text-sm">
                         <option value="all">All Statuses</option>
                         {Object.values(PlotStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
-                    <select name="type" value={filters.type} onChange={handleFilterChange} className="bg-slate-800 border border-slate-700 rounded p-2">
+                    <select name="type" value={filters.type} onChange={handleFilterChange} className="bg-slate-800 border-slate-700 rounded p-2 text-sm">
                         <option value="all">All Types</option>
                          <option value="Rústico">Rústico</option>
                          <option value="Urbano">Urbano</option>
                     </select>
                 </div>
             </div>
-            <div className="bg-slate-900 p-4 rounded-lg border border-slate-800">
-                <h2 className="text-lg font-semibold mb-3">Sort by</h2>
-                 <select value={sort} onChange={e => setSort(e.target.value)} className="bg-slate-800 border border-slate-700 rounded p-2 w-full">
+            <div className="bg-slate-900 p-4 rounded-lg border border-slate-800 md:w-1/4 lg:w-1/5">
+                <h2 className="text-base font-semibold mb-3">Sort by</h2>
+                 <select value={sort} onChange={e => setSort(e.target.value)} className="bg-slate-800 border-slate-700 rounded p-2 w-full text-sm">
                     <option value="price-desc">Price: High to Low</option>
                     <option value="price-asc">Price: Low to High</option>
                     <option value="size-desc">Size: Large to Small</option>
@@ -159,14 +159,14 @@ const Tomtebase: React.FC = () => {
         </div>
 
         <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="lg:col-span-1 h-[600px] lg:h-auto overflow-y-auto pr-2">
+            <div className="lg:col-span-1 h-[600px] lg:h-[calc(100vh-12rem)] overflow-y-auto pr-2">
                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                      {filteredAndSortedPlots.map(plot => (
                         <PlotCard key={plot.id} plot={plot} onClick={() => setSelectedPlotId(plot.id)} isSelected={plot.id === selectedPlotId} />
                     ))}
                  </div>
             </div>
-            <div className="lg:col-span-1 rounded-lg overflow-hidden border border-slate-800 h-[600px] lg:h-auto sticky top-24">
+            <div className="lg:col-span-1 rounded-lg overflow-hidden border border-slate-800 h-[600px] lg:h-[calc(100vh-12rem)] sticky top-24">
                  <MapContainer center={[38.38, -0.9]} zoom={10} style={{ height: '100%', width: '100%', backgroundColor: '#1e293b' }}>
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
