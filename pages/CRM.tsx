@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Customer, CustomerStatus, CustomerType, EmailMessage } from '../types';
-import { crmStore } from '../services/crmService';
-import { emailService } from '../services/emailService';
-import { settingsStore } from '../services/settingsService';
-import LeadImporter from '../components/LeadImporter';
+import { Customer, CustomerStatus, CustomerType, EmailMessage } from '@/types';
+import { crmStore } from '@/services/crmService';
+import { emailService } from '@/services/emailService';
+import { settingsStore } from '@/services/settingsService';
+import LeadImporter from '@/components/LeadImporter';
 import {
   Users, Plus, X, Search, Phone, Mail, Star, TrendingUp,
   Euro, MapPin, Loader2, UserCheck, Building2, Home,

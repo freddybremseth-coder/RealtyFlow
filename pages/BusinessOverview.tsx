@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { gemini } from '../services/geminiService';
-import { settingsStore } from '../services/settingsService';
+import { gemini } from '@/services/geminiService';
+import { settingsStore } from '@/services/settingsService';
 import {
   Building2, Globe, Zap, Sparkles, Loader2, Copy, Check,
   TrendingUp, ShoppingBag, User, Leaf, Bot, BookOpen,
