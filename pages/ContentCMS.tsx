@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { gemini } from '@/services/claudeService';
+import { gemini } from '@/services/geminiService';
 import { settingsStore } from '@/services/settingsService';
 import { FileText, Send, BookOpen, Mail, Sparkles, Copy, Check, Download, RefreshCw, Layout, MousePointer2, HardHat } from 'lucide-react';
 

@@ -7,7 +7,7 @@ import {
   BedDouble, Bath, Car, Sun, Eye, Thermometer, Leaf, BarChart3, Award,
   AlertCircle, Search, RefreshCw, ArrowRight, Clock, Euro
 } from 'lucide-react';
-import { gemini } from '@/services/claudeService';
+import { gemini } from '@/services/geminiService';
 import { valuationStore } from '@/services/valuationService';
 import { settingsStore } from '@/services/settingsService';
 import {
@@ -484,7 +484,9 @@ const Valuation: React.FC = () => {
     const price = newComp.price!;
     const area = newComp.area!;
     const comp: ComparableProperty = {
-      title: newComp.title!, price, area,
+      title: newComp.title!,
+      price,
+      area,
       pricePerSqm: Math.round(price / area),
       bedrooms: newComp.bedrooms || 0,
       source: newComp.source as ComparableProperty['source'] || 'Manuell',
@@ -542,8 +544,10 @@ const Valuation: React.FC = () => {
 
       {showReport && result && (
         <PrintReport
-          data={form} result={result}
-          brand={activeBrand} profile={profile}
+          data={form}
+          result={result}
+          brand={activeBrand}
+          profile={profile}
           onClose={() => setShowReport(false)}
         />
       )}
@@ -562,15 +566,19 @@ const Valuation: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
-          <button onClick={() => setShowHistory(h => !h)}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm transition-colors">
+          <button
+            onClick={() => setShowHistory(h => !h)}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm transition-colors"
+          >
             <Clock size={15} />
             <span className="hidden sm:inline">Historikk</span>
             {savedList.length > 0 && <span className="bg-cyan-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{savedList.length}</span>}
           </button>
           {result && (
-            <button onClick={() => setShowReport(true)}
-              className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+            <button
+              onClick={() => setShowReport(true)}
+              className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+            >
               <Printer size={15} /> Åpne rapport
             </button>
           )}
@@ -592,10 +600,18 @@ const Valuation: React.FC = () => {
                     <p className="text-xs text-slate-500">{v.propertyData.municipality} · {new Date(v.createdAt).toLocaleDateString('nb-NO')} · {fmt(v.result.estimatedMid)}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => loadSaved(v)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">Last inn</button>
-                    <button onClick={() => valuationStore.delete(v.id)}
-                      className="text-xs text-red-400 hover:text-red-300 transition-colors">Slett</button>
+                    <button
+                      onClick={() => loadSaved(v)}
+                      className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+                    >
+                      Last inn
+                    </button>
+                    <button
+                      onClick={() => valuationStore.delete(v.id)}
+                      className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      Slett
+                    </button>
                   </div>
                 </div>
               ))}
@@ -607,10 +623,13 @@ const Valuation: React.FC = () => {
       {/* ─ Brand selector ─ */}
       <div className="flex gap-3 flex-wrap">
         {settingsStore.getBrands().map(b => (
-          <button key={b.id} onClick={() => setActiveBrand(b)}
+          <button
+            key={b.id}
+            onClick={() => setActiveBrand(b)}
             className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${activeBrand.id === b.id
               ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-400'
-              : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'}`}>
+              : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+          >
             {b.name}
           </button>
         ))}
@@ -728,10 +747,29 @@ const Valuation: React.FC = () => {
             </select>
           </Field>
           <Field label="Parkeringsplasser">
-            <input className={inputCls} type="number" min={0} value={form.parkingSpaces} onChange={e => { set('parkingSpaces', +e.target.value); set('garage', +e.target.value > 0); }} placeholder="0" />
+            <input
+              className={inputCls}
+              type="number"
+              min={0}
+              value={form.parkingSpaces}
+              onChange={e => {
+                set('parkingSpaces', +e.target.value);
+                set('garage', +e.target.value > 0);
+              }}
+              placeholder="0"
+            />
           </Field>
           <Field label="Felleskostnader (€/mnd)">
-            <input className={inputCls} type="number" value={form.communityFees || ''} onChange={e => { set('communityFees', +e.target.value || undefined); set('hasCommunityFees', +e.target.value > 0); }} placeholder="80" />
+            <input
+              className={inputCls}
+              type="number"
+              value={form.communityFees || ''}
+              onChange={e => {
+                set('communityFees', +e.target.value || undefined);
+                set('hasCommunityFees', +e.target.value > 0);
+              }}
+              placeholder="80"
+            />
           </Field>
           <Field label="IBI – Eiendomsskatt (€/år)">
             <input className={inputCls} type="number" value={form.propertyTax || ''} onChange={e => set('propertyTax', +e.target.value || undefined)} placeholder="400" />
@@ -747,7 +785,9 @@ const Valuation: React.FC = () => {
             <label key={key} className="flex items-center justify-between p-3 bg-slate-800 rounded-xl cursor-pointer hover:bg-slate-750 transition-colors">
               <span className="text-sm text-slate-300">{label}</span>
               <button type="button" onClick={() => set(key, !form[key] as any)} className={toggleCls(!!form[key])}>
-                <span className={`inline-block w-4 h-4 bg-white rounded-full transition-transform ${form[key] ? 'translate-x-5' : 'translate-x-1'}`} />
+                <span
+                  className={`inline-block w-4 h-4 bg-white rounded-full transition-transform ${form[key] ? 'translate-x-5' : 'translate-x-1'}`}
+                />
               </button>
             </label>
           ))}
@@ -783,8 +823,12 @@ const Valuation: React.FC = () => {
 
         {/* External links */}
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <a href={idealista_url} target="_blank" rel="noreferrer"
-            className="flex items-center gap-3 p-3 bg-slate-800 border border-slate-700 rounded-xl hover:border-cyan-500/40 transition-colors group">
+          <a
+            href={idealista_url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 p-3 bg-slate-800 border border-slate-700 rounded-xl hover:border-cyan-500/40 transition-colors group"
+          >
             <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
               <Search size={15} className="text-red-400" />
             </div>
@@ -794,8 +838,12 @@ const Valuation: React.FC = () => {
             </div>
             <ExternalLink size={13} className="text-slate-600 group-hover:text-cyan-400 transition-colors shrink-0" />
           </a>
-          <a href={casasafari_url} target="_blank" rel="noreferrer"
-            className="flex items-center gap-3 p-3 bg-slate-800 border border-slate-700 rounded-xl hover:border-cyan-500/40 transition-colors group">
+          <a
+            href={casasafari_url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 p-3 bg-slate-800 border border-slate-700 rounded-xl hover:border-cyan-500/40 transition-colors group"
+          >
             <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
               <BarChart3 size={15} className="text-green-400" />
             </div>
@@ -836,8 +884,10 @@ const Valuation: React.FC = () => {
                 <option>CasaSafari</option>
                 <option>Manuell</option>
               </select>
-              <button onClick={addComparable}
-                className="bg-cyan-500 hover:bg-cyan-400 text-white px-3 rounded-xl transition-colors">
+              <button
+                onClick={addComparable}
+                className="bg-cyan-500 hover:bg-cyan-400 text-white px-3 rounded-xl transition-colors"
+              >
                 <Plus size={16} />
               </button>
             </div>
@@ -849,23 +899,32 @@ const Valuation: React.FC = () => {
       <SectionCard title="Rådgiverens notater fra visning" icon={<ClipboardList size={18} />}>
         <div className="space-y-4">
           <Field label="Generelle notater / inntrykk">
-            <textarea className={`${inputCls} resize-none`} rows={4}
+            <textarea
+              className={`${inputCls} resize-none`}
+              rows={4}
               value={form.agentNotes}
               onChange={e => set('agentNotes', e.target.value)}
-              placeholder="Skriv fritt om eiendommen, nabolaget, eiers situasjon, stemning på visning, vedlikehold, spesielle trekk..." />
+              placeholder="Skriv fritt om eiendommen, nabolaget, eiers situasjon, stemning på visning, vedlikehold, spesielle trekk..."
+            />
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Styrker (selgspunkter)">
-              <textarea className={`${inputCls} resize-none`} rows={3}
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={3}
                 value={form.agentStrengths}
                 onChange={e => set('agentStrengths', e.target.value)}
-                placeholder="Flott utsikt, stor terrasse, topprenovert kjøkken, rolig beliggenhet, sydvendt..." />
+                placeholder="Flott utsikt, stor terrasse, topprenovert kjøkken, rolig beliggenhet, sydvendt..."
+              />
             </Field>
             <Field label="Svakheter (utfordringer)">
-              <textarea className={`${inputCls} resize-none`} rows={3}
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={3}
                 value={form.agentWeaknesses}
                 onChange={e => set('agentWeaknesses', e.target.value)}
-                placeholder="Trafikkstøy, utdatert bad, ingen heis, nord-vendt, lite vedlikehold..." />
+                placeholder="Trafikkstøy, utdatert bad, ingen heis, nord-vendt, lite vedlikehold..."
+              />
             </Field>
           </div>
         </div>
@@ -879,8 +938,11 @@ const Valuation: React.FC = () => {
       )}
 
       {/* ─ Generate button ─ */}
-      <button onClick={handleGenerate} disabled={isGenerating}
-        className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl text-base transition-all shadow-lg shadow-cyan-500/20">
+      <button
+        onClick={handleGenerate}
+        disabled={isGenerating}
+        className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl text-base transition-all shadow-lg shadow-cyan-500/20"
+      >
         {isGenerating ? (
           <><Loader2 size={20} className="animate-spin" /> AI genererer profesjonell verdivurdering...</>
         ) : (
@@ -899,8 +961,10 @@ const Valuation: React.FC = () => {
               <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <CheckCircle size={20} className="text-cyan-400" /> Verdivurdering generert
               </h2>
-              <button onClick={() => setShowReport(true)}
-                className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-md shadow-cyan-500/20">
+              <button
+                onClick={() => setShowReport(true)}
+                className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-md shadow-cyan-500/20"
+              >
                 <Printer size={15} /> Åpne fullstendig rapport
               </button>
             </div>
@@ -974,8 +1038,10 @@ const Valuation: React.FC = () => {
             </div>
           </div>
 
-          <button onClick={() => setShowReport(true)}
-            className="w-full flex items-center justify-center gap-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/30 text-slate-200 font-semibold py-4 rounded-2xl text-sm transition-all">
+          <button
+            onClick={() => setShowReport(true)}
+            className="w-full flex items-center justify-center gap-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-cyan-500/30 text-slate-200 font-semibold py-4 rounded-2xl text-sm transition-all"
+          >
             <FileText size={18} className="text-cyan-400" /> Åpne fullstendig rapport (PDF-klar)
             <ArrowRight size={16} className="text-slate-500" />
           </button>

@@ -36,8 +36,9 @@ create index if not exists idx_customers_lead_id  on customers (lead_id);
 alter table customers enable row level security;
 
 -- Autentiserte brukere (innlogget rådgiver) kan gjøre alt
-create policy if not exists "auth_all_customers"
-  on customers
+DROP POLICY IF EXISTS "auth_all_customers" ON public.customers;
+CREATE POLICY "auth_all_customers"
+  on public.customers
   for all
   to authenticated
   using (true)

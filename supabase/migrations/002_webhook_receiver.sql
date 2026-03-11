@@ -18,8 +18,10 @@ create index if not exists idx_leads_status on leads (status);
 --    Service role bypasser RLS automatisk – ingen ekstern policy nødvendig.
 --    Denne policyen gir anon-rolle mulighet til å INSERT via edge function,
 --    slik at kontaktskjemaer på eksterne domener fungerer uten innlogging.
-create policy if not exists "anon_insert_leads"
-  on leads
-  for insert
-  to anon
-  with check (true);
+DROP POLICY IF EXISTS "anon_insert_leads" ON public.leads;
+
+CREATE POLICY "anon_insert_leads"
+  ON public.leads
+  FOR INSERT
+  TO anon
+  WITH CHECK (true);

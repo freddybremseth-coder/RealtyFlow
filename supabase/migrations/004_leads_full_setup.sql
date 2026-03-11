@@ -48,9 +48,11 @@ create index if not exists idx_leads_type     on leads (type);
 alter table leads enable row level security;
 
 -- 5. Fjern gamle policyer (i tilfelle de er feil satt opp)
-drop policy if exists "anon_insert_leads" on leads;
-drop policy if exists "anon_select_leads" on leads;
-drop policy if exists "auth_all_leads"    on leads;
+drop policy if exists "anon_insert_leads" on public.leads;
+drop policy if exists "anon_select_leads" on public.leads;
+drop policy if exists "anon_update_leads" on public.leads;
+drop policy if exists "anon_delete_leads" on public.leads;
+drop policy if exists "auth_all_leads"    on public.leads;
 
 -- 6. Anon (uinnlogget) kan lese og skrive — trengs for dashboard uten innlogging
 create policy "anon_select_leads"

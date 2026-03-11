@@ -11,7 +11,7 @@ import {
   Flame, Target, Activity, Facebook, Instagram, Newspaper,
   Languages, X, AtSign
 } from 'lucide-react';
-import { gemini } from '@/services/claudeService';
+import { gemini } from '@/services/geminiService';
 import { settingsStore } from '@/services/settingsService';
 import { emailService } from '@/services/emailService';
 import { leadStore } from '@/services/leadService';
