@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import LiveAssistant from './components/LiveAssistant';
 import { authStore } from './services/authService';
 import { settingsStore } from './services/settingsService';
+import { supabase } from './services/supabase';
 
 // Lazy load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -29,15 +30,29 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(authStore.isAuthenticated());
 
   useEffect(() => {
-    if (authStore.isAuthenticated()) {
-      settingsStore.loadApiKeysFromCloud().catch(console.error);
-    }
-    const unsubscribe = authStore.subscribe(() => {
-      const auth = authStore.isAuthenticated();
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsAuthenticated(true);
+        settingsStore.loadApiKeysFromCloud().catch(console.error);
+      } else {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const auth = !!session;
       setIsAuthenticated(auth);
-      if (auth) settingsStore.loadApiKeysFromCloud().catch(console.error);
+      if (auth) {
+        settingsStore.loadApiKeysFromCloud().catch(console.error);
+      } 
     });
-    return unsubscribe;
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   return (
