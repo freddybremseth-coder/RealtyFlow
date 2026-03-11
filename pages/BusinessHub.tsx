@@ -11,11 +11,11 @@ import {
   Flame, Target, Activity, Facebook, Instagram, Newspaper,
   Languages, X, AtSign
 } from 'lucide-react';
-import { gemini } from '../services/claudeService';
-import { settingsStore } from '../services/settingsService';
-import { emailService } from '../services/emailService';
-import { leadStore } from '../services/leadService';
-import { Lead, LeadStatus as PipelineStatus } from '../types';
+import { gemini } from '@/services/claudeService';
+import { settingsStore } from '@/services/settingsService';
+import { emailService } from '@/services/emailService';
+import { leadStore } from '@/services/leadService';
+import { Lead, LeadStatus as PipelineStatus } from '@/types';
 
 // ─── Typer ────────────────────────────────────────────────────────────────────
 
