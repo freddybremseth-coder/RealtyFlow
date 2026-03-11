@@ -390,6 +390,61 @@ const Settings: React.FC = () => {
         </div>
       )}
 
+      {activeTab === 'profile' && (
+          <form onSubmit={handleProfileSubmit} className="space-y-6 animate-in fade-in">
+             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div className="flex items-center gap-5">
+                    <div
+                    className="relative group cursor-pointer shrink-0"
+                    onClick={() => advisorFileRef.current?.click()}
+                    >
+                        <div className="w-24 h-24 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center overflow-hidden">
+                            {profile.imageUrl
+                            ? <img src={profile.imageUrl} className="w-full h-full object-cover" alt="profile" />
+                            : <User size={32} className="text-slate-500" />}
+                        </div>
+                        <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Camera size={20} className="text-white" />
+                        </div>
+                        <input type="file" ref={advisorFileRef} className="hidden" accept="image/*" onChange={handleAdvisorImageUpload} />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                        <div>
+                            <label className={lCls}>Fullt navn</label>
+                            <input className={iCls} value={profile.name} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} placeholder="Ola Nordmann" />
+                        </div>
+                        <div>
+                            <label className={lCls}>Tittel</label>
+                            <input className={iCls} value={profile.title} onChange={e => setProfile(p => ({ ...p, title: e.target.value }))} placeholder="CEO & Founder" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                 <h3 className="text-sm font-bold text-slate-200">Kontaktinformasjon</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className={lCls}>E-post</label>
+                        <input type="email" className={iCls} value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} placeholder="din@epost.no" />
+                    </div>
+                     <div>
+                        <label className={lCls}>Telefon</label>
+                        <input type="tel" className={iCls} value={profile.phone} onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))} placeholder="+47 123 45 678" />
+                    </div>
+                </div>
+            </div>
+             <button
+              type="submit"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all"
+            >
+              {profileSaved
+                ? <><CheckCircle2 size={14} /> Profil lagret!</>
+                : <><Save size={14} /> Lagre profil</>
+              }
+            </button>
+          </form>
+      )}
+
       {activeTab === 'ai' && (
         <form onSubmit={handleApiKeysSave} className="space-y-6 animate-in fade-in">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
@@ -454,8 +509,6 @@ const Settings: React.FC = () => {
 
       {activeTab === 'email' && (
         <div className="space-y-6 animate-in fade-in">
-
-          {/* Forklaringsboks */}
           <div className="flex gap-3 p-4 rounded-2xl bg-cyan-500/5 border border-cyan-500/20">
             <Info size={16} className="text-cyan-400 flex-shrink-0 mt-0.5" />
             <div className="space-y-1 text-xs text-slate-400 leading-relaxed">
@@ -469,7 +522,6 @@ const Settings: React.FC = () => {
           </div>
 
           <form onSubmit={handleEmailSave} className="space-y-5">
-            {/* Resend API-nøkkel */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
               <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
                 <Key size={14} className="text-cyan-400" /> Resend API-nøkkel
@@ -495,7 +547,6 @@ const Settings: React.FC = () => {
               </div>
             </div>
 
-            {/* Avsenderinfo */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
               <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
                 <Mail size={14} className="text-cyan-400" /> Avsenderinfo
@@ -525,7 +576,6 @@ const Settings: React.FC = () => {
               <p className="text-[10px] text-slate-600">Adressen må tilhøre et domene du har verifisert i Resend.</p>
             </div>
 
-            {/* Lagre-knapp */}
             <button
               type="submit"
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all"
@@ -537,7 +587,6 @@ const Settings: React.FC = () => {
             </button>
           </form>
 
-          {/* Test-seksjon */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
             <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
               <Send size={14} className="text-cyan-400" /> Send test-e-post
@@ -570,7 +619,34 @@ const Settings: React.FC = () => {
         </div>
       )}
 
-      {/* Other tabs remain the same for now */}
+      {activeTab === 'integrations' && (
+          <div className="space-y-4 animate-in fade-in">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+                  <Zap size={24} className="mx-auto text-slate-600 mb-2" />
+                  <h3 className="text-lg font-bold text-slate-300">Under utvikling</h3>
+                  <p className="text-sm text-slate-500 mt-1">Funksjonalitet for å koble til kanaler kommer snart.</p>
+              </div>
+          </div>
+      )}
+
+      {activeTab === 'system' && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                    <Languages size={14} className="text-cyan-400" /> Språk i appen
+                </h3>
+                <p className="text-xs text-slate-500">Velg hvilket språk som skal brukes i brukergrensesnittet.</p>
+                 <div className="flex gap-2">
+                    {(['en', 'no', 'es'] as AppLanguage[]).map(code => (
+                        <button key={code} onClick={() => handleLanguageChange(code)} className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${lang === code ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'text-slate-400 bg-slate-800/50 border-slate-700 hover:bg-slate-800'}`}>
+                            {code === 'en' ? 'English' : code === 'no' ? 'Norsk' : 'Español'}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 };
