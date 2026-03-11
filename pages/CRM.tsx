@@ -4,7 +4,6 @@ import { Customer, CustomerStatus, CustomerType, EmailMessage } from '@/types';
 import { crmStore } from '@/services/crmService';
 import { emailService } from '@/services/emailService';
 import { settingsStore } from '@/services/settingsService';
-import LeadImporter from '@/components/LeadImporter';
 import {
   Users, Plus, X, Search, Phone, Mail, Star, TrendingUp,
   Euro, MapPin, Loader2, UserCheck, Building2, Home,
@@ -13,106 +12,10 @@ import {
   ArrowRight, Inbox, ChevronDown, ChevronUp, Newspaper, FileText,
 } from 'lucide-react';
 
-// ─── Typer for AI-fremdrift ────────────────────────────────────────────────
-
-interface NextStep {
-  type: 'email' | 'newsletter' | 'prospect' | 'viewing';
-  icon: React.ReactNode;
-  title: string;
-  reason: string;
-  draftSubject: string;
-  draftBody: string;
-}
-
-// ─── AI-kall: generer neste steg for en kunde ──────────────────────────────
-
-async function aiNextSteps(customer: Customer, apiKey: string): Promise<NextStep[]> {
-  const emailSummary = (customer.emails ?? [])
-    .slice(-5)
-    .map(e => `[${e.isIncoming ? 'INN' : 'UT'}] ${e.date.slice(0,10)} – ${e.subject}: ${e.body.slice(0, 120)}`)
-    .join('\n');
-
-  const daysSince = Math.floor(
-    (Date.now() - new Date(customer.lastContact).getTime()) / 86_400_000,
-  );
-
-  const advisorName  = settingsStore.getProfile().name  ?? 'Rådgiver';
-  const advisorEmail = settingsStore.getAutomation().emailFromEmail ?? '';
-
-  const prompt = `Du er en ekspert på eiendomssalg og CRM-strategi. Analyser denne kunden og foreslå de 3 beste neste stegene for å drive fremdrift.
-
-KUNDE:
-- Navn: ${customer.name}
-- Type: ${customer.type}
-- Status: ${customer.status}
-- Budsjett: ${customer.budget ? `€${customer.budget.toLocaleString()}` : 'ukjent'}
-- Område: ${customer.location ?? 'ukjent'}
-- Nasjonalitet: ${customer.nationality ?? 'ukjent'}
-- Dager siden siste kontakt: ${daysSince}
-- Notater: ${customer.notes ?? 'ingen'}
-- Tags: ${customer.tags?.join(', ') ?? 'ingen'}
-
-E-POSTHISTORIKK (siste 5):
-${emailSummary || 'Ingen e-poster ennå'}
-
-RÅDGIVER: ${advisorName} <${advisorEmail}>
-
-Svar KUN med gyldig JSON-array (ingen markdown-blokk), format:
-[
-  {
-    "type": "email" | "newsletter" | "prospect" | "viewing",
-    "title": "Kort tittelbeskrivelse",
-    "reason": "Kort begrunnelse (1 setning) på norsk",
-    "draftSubject": "Ferdig e-post-emne på norsk",
-    "draftBody": "Ferdig e-posttekst på norsk (2-4 avsnitt, profesjonell tone, avslutt med Mvh, ${advisorName})"
-  }
-]`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1800,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-    const data = await res.json();
-    const text: string = data.content?.[0]?.text ?? '[]';
-    const jsonStr = text.match(/\[[\s\S]*\]/)?.[0] ?? '[]';
-    const raw = JSON.parse(jsonStr) as Omit<NextStep, 'icon'>[];
-    return raw.map(s => ({
-      ...s,
-      icon:
-        s.type === 'email'      ? <Mail size={13} />      :
-        s.type === 'newsletter' ? <Newspaper size={13} />  :
-        s.type === 'prospect'   ? <FileText size={13} />   :
-                                  <CalendarCheck size={13} />,
-    }));
-  } catch {
-    return [];
-  }
-}
-
-// ─── CalendarCheck icon fallback ──────────────────────────────────────────
-const CalendarCheck: React.FC<{size?: number}> = ({ size = 13 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2"/>
-    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-    <line x1="3" y1="10" x2="21" y2="10"/>
-    <polyline points="9 16 11 18 15 14"/>
-  </svg>
-);
 
 // ─── Detaljpanel ───────────────────────────────────────────────────────────
 
-type DetailTab = 'info' | 'email' | 'ai';
+type DetailTab = 'info' | 'email';
 
 const STATUS_CONFIG: Record<CustomerStatus, { label: string; color: string; bg: string }> = {
   [CustomerStatus.ACTIVE]:   { label: 'Aktiv',    color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
@@ -151,11 +54,6 @@ const CustomerDetailPanel: React.FC<{
   const [sending, setSending]     = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
-  // AI neste steg
-  const [aiLoading, setAiLoading] = useState(false);
-  const [steps, setSteps]         = useState<NextStep[]>([]);
-  const [aiError, setAiError]     = useState('');
-
   const emails = [...(customer.emails ?? [])].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
@@ -191,29 +89,6 @@ const CustomerDetailPanel: React.FC<{
       ? { ok: true,  msg: `Sendt til ${customer.email}` }
       : { ok: false, msg: result.error ?? 'Ukjent feil' }
     );
-  };
-
-  const handleGenerateAi = async () => {
-    setAiLoading(true);
-    setAiError('');
-    setSteps([]);
-    const apiKey = settingsStore.getApiKeys().anthropic;
-    if (!apiKey) {
-      setAiError('Mangler Anthropic API-nøkkel. Gå til Innstillinger → AI-nøkler.');
-      setAiLoading(false);
-      return;
-    }
-    const result = await aiNextSteps(customer, apiKey);
-    if (!result.length) setAiError('AI klarte ikke å generere forslag. Prøv igjen.');
-    setSteps(result);
-    setAiLoading(false);
-  };
-
-  const useDraft = (step: NextStep) => {
-    setSubject(step.draftSubject);
-    setBody(step.draftBody);
-    setTab('email');
-    setSendResult(null);
   };
 
   const daysSince = Math.floor(
@@ -266,10 +141,6 @@ const CustomerDetailPanel: React.FC<{
                 {emails.length}
               </span>
             )}
-          </button>
-          <button onClick={() => { setTab('ai'); if (!steps.length && !aiLoading) handleGenerateAi(); }} className={tabCls('ai')}>
-            <Sparkles size={12} />
-            AI-fremdrift
           </button>
         </div>
 
@@ -436,100 +307,6 @@ const CustomerDetailPanel: React.FC<{
               </div>
             </div>
           )}
-
-          {/* ── AI-FREMDRIFT ─────────────────────────────────────────── */}
-          {tab === 'ai' && (
-            <div className="p-5 space-y-5">
-
-              {/* Regenerer-knapp */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold text-slate-200">AI-fremdriftsforslag</p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">
-                    Basert på kundeprofil, budsjett og e-posthistorikk
-                  </p>
-                </div>
-                <button
-                  onClick={handleGenerateAi}
-                  disabled={aiLoading}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 transition-all disabled:opacity-50"
-                >
-                  {aiLoading
-                    ? <><Loader2 size={11} className="animate-spin" /> Analyserer…</>
-                    : <><RefreshCw size={11} /> Analyser på nytt</>
-                  }
-                </button>
-              </div>
-
-              {/* Laster */}
-              {aiLoading && (
-                <div className="flex flex-col items-center gap-4 py-14 text-center">
-                  <div className="relative">
-                    <Sparkles size={36} className="text-indigo-400" />
-                    <Loader2 size={16} className="animate-spin text-cyan-400 absolute -top-1 -right-1" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-300 mb-1">AI analyserer {customer.name}…</p>
-                    <p className="text-xs text-slate-600">Ser på e-posthistorikk, budsjett og kundestatus</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Feil */}
-              {aiError && !aiLoading && (
-                <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-                  <AlertCircle size={13} className="mt-0.5 shrink-0" />
-                  {aiError}
-                </div>
-              )}
-
-              {/* Forslag */}
-              {!aiLoading && steps.length > 0 && steps.map((step, i) => (
-                <div
-                  key={i}
-                  className="border border-slate-800 rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all group"
-                >
-                  <div className="px-5 py-4 bg-slate-900/40">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-6 h-6 rounded-full bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-indigo-400">
-                        {step.icon}
-                      </span>
-                      <span className="text-xs font-bold text-slate-200">{step.title}</span>
-                      <span className="ml-auto text-[9px] font-mono uppercase text-slate-600 bg-slate-800 px-2 py-0.5 rounded-full">
-                        {step.type}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">{step.reason}</p>
-                  </div>
-
-                  {/* Utkast-forhåndsvisning */}
-                  <div className="px-5 py-3 bg-slate-950/50 border-t border-slate-800">
-                    <p className="text-[10px] font-mono text-slate-600 mb-1">Emne: {step.draftSubject}</p>
-                    <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                      {step.draftBody.slice(0, 100)}…
-                    </p>
-                  </div>
-
-                  <div className="px-5 py-3 border-t border-slate-800 flex justify-end">
-                    <button
-                      onClick={() => useDraft(step)}
-                      className="flex items-center gap-1.5 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
-                    >
-                      Bruk dette utkastet <ArrowRight size={12} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              {/* Tom state */}
-              {!aiLoading && !aiError && steps.length === 0 && (
-                <div className="flex flex-col items-center gap-3 py-14 text-center opacity-40">
-                  <Sparkles size={36} />
-                  <p className="text-xs">Klikk «Analyser på nytt» for å generere forslag</p>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -542,7 +319,6 @@ const CRM: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>(crmStore.getCustomers());
   const [selected, setSelected] = useState<Customer | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isImporterOpen, setIsImporterOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | CustomerStatus>('all');
@@ -606,7 +382,6 @@ const CRM: React.FC = () => {
 
   return (
     <div className="space-y-6 lg:space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
-      <LeadImporter isOpen={isImporterOpen} onClose={() => setIsImporterOpen(false)} />
 
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 px-1">
@@ -615,12 +390,6 @@ const CRM: React.FC = () => {
           <p className="text-slate-400 text-xs mt-1">{stats.total} kunder · {stats.vip} VIP · €{(stats.totalVal / 1000000).toFixed(1)}M portefølje</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setIsImporterOpen(true)}
-            className="px-6 py-3 bg-slate-800 text-cyan-400 border border-slate-700 rounded-2xl font-bold flex items-center gap-2 text-xs hover:bg-slate-700 transition-all"
-            >
-            <Upload size={16} /> Importer Leads
-          </button>
           <button
             onClick={() => setIsFormOpen(true)}
             className="px-6 py-3 bg-cyan-500 text-slate-950 rounded-2xl font-bold flex items-center gap-2 text-xs shadow-lg shadow-cyan-500/20 hover:bg-cyan-400 transition-all"

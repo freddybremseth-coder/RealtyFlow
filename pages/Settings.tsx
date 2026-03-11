@@ -167,17 +167,13 @@ const Settings: React.FC = () => {
   const t = useTranslation(lang);
   const [user, setUser] = useState<SupabaseUser | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'brands' | 'profile' | 'integrations' | 'ai' | 'email' | 'system'>('brands');
+  const [activeTab, setActiveTab] = useState<'brands' | 'profile' | 'integrations' | 'email' | 'system'>('brands');
   const [brands, setBrands] = useState<Brand[]>([]);
   const [profile, setProfile] = useState<AdvisorProfile | null>(null);
   const [automation, setAutomation] = useState<AutomationSettings | null>(null);
-  const [apiKeys, setApiKeys] = useState<ApiKeys | null>(null);
   const [editingBrand, setEditingBrand] = useState<Partial<Brand> | null>(null);
   const [profileSaved, setProfileSaved] = useState(false);
-  const [apiKeysSaved, setApiKeysSaved] = useState(false);
   const [expertiseInput, setExpertiseInput] = useState('');
-  const [showOpenAIKey, setShowOpenAIKey] = useState(false);
-  const [showAnthropicKey, setShowAnthropicKey] = useState(false);
 
   const advisorFileRef = useRef<HTMLInputElement>(null);
 
@@ -196,11 +192,8 @@ const Settings: React.FC = () => {
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
 
-        await settingsStore.loadApiKeysFromCloud();
-        
         setProfile(settingsStore.getProfile());
         setAutomation(settingsStore.getAutomation());
-        setApiKeys(settingsStore.getApiKeys());
         setLang(settingsStore.getLanguage());
         
         await fetchBrands();
@@ -212,7 +205,6 @@ const Settings: React.FC = () => {
     const unsub = settingsStore.subscribe(() => {
       setProfile(settingsStore.getProfile());
       setAutomation(settingsStore.getAutomation());
-      setApiKeys(settingsStore.getApiKeys());
       setLang(settingsStore.getLanguage());
     });
     return unsub;
@@ -276,14 +268,6 @@ const Settings: React.FC = () => {
     setProfile(p => p ? ({ ...p, expertise: p.expertise.filter(e => e !== item) }) : null);
   };
 
-  const handleApiKeysSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!apiKeys) return;
-    settingsStore.updateApiKeys(apiKeys);
-    setApiKeysSaved(true);
-    setTimeout(() => setApiKeysSaved(false), 2500);
-  };
-
   const [emailSaved, setEmailSaved] = useState(false);
   const [emailTesting, setEmailTesting] = useState(false);
   const [emailTestResult, setEmailTestResult] = useState<{ok: boolean; msg: string} | null>(null);
@@ -320,13 +304,12 @@ const Settings: React.FC = () => {
   const TABS = [
     { id: 'brands', label: t.st_brands || 'Selskaper', icon: <Building2 size={16} /> },
     { id: 'profile', label: t.st_advisor || 'Rådgiver', icon: <User size={16} /> },
-    { id: 'ai', label: 'AI-nøkler', icon: <Key size={16} /> },
     { id: 'email', label: 'E-post', icon: <Mail size={16} /> },
     { id: 'integrations', label: t.st_integrations || 'Kanaler', icon: <Link size={16} /> },
     { id: 'system', label: t.st_system || 'System', icon: <Shield size={16} /> },
   ];
 
-  if (isLoading || !profile || !automation || !apiKeys) {
+  if (isLoading || !profile || !automation) {
     return <div className="w-full max-w-4xl mx-auto px-4 py-10 text-center text-slate-500">Laster innstillinger...</div>;
   }
 
@@ -422,38 +405,6 @@ const Settings: React.FC = () => {
           </div>
           <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all">
             {profileSaved ? <><CheckCircle2 size={14} /> Profil lagret!</> : <><Save size={14} /> Lagre profil</>}
-          </button>
-        </form>
-      )}
-
-      {activeTab === 'ai' && (
-        <form onSubmit={handleApiKeysSave} className="space-y-6 animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2"><Key size={14} className="text-cyan-400" /> OpenAI API Nøkkel</h3>
-            <div>
-              <label className={lCls}>API-nøkkel</label>
-              <div className="relative">
-                <input type={showOpenAIKey ? 'text' : 'password'} className={iCls + ' pr-10 font-mono'} placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" value={apiKeys.openai || ''} onChange={e => setApiKeys(k => k ? { ...k, openai: e.target.value } : null)} />
-                <button type="button" onClick={() => setShowOpenAIKey(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-all">
-                  {showOpenAIKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2"><Key size={14} className="text-cyan-400" /> Anthropic API Nøkkel</h3>
-            <div>
-              <label className={lCls}>API-nøkkel</label>
-              <div className="relative">
-                <input type={showAnthropicKey ? 'text' : 'password'} className={iCls + ' pr-10 font-mono'} placeholder="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" value={apiKeys.anthropic || ''} onChange={e => setApiKeys(k => k ? { ...k, anthropic: e.target.value } : null)} />
-                <button type="button" onClick={() => setShowAnthropicKey(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-all">
-                  {showAnthropicKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-            </div>
-          </div>
-          <button type="submit" className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all">
-            {apiKeysSaved ? <><CheckCircle2 size={14} /> Lagret!</> : <><Save size={14} /> Lagre API-nøkler</>}
           </button>
         </form>
       )}
