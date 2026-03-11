@@ -178,6 +178,7 @@ const Settings: React.FC = () => {
 
   async function fetchBrands() {
     const { data, error } = await supabase.from('brands').select('*');
+    console.log('Fetched brands:', data, 'Error:', error);
     if (error) {
       console.error('Error fetching brands:', error);
       return;
