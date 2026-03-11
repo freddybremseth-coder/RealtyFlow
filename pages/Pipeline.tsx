@@ -1,11 +1,11 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { LeadStatus, Lead, Property, ViewingItem, CallLog, NurtureStep, EmailMessage } from '../types';
-import { leadStore } from '../services/leadService';
-import { crmStore } from '../services/crmService';
-import { propertyStore } from '../services/propertyService';
-import { webhookService, WebhookLead } from '../services/webhookService';
-import { BRANDS } from '../constants';
+import { LeadStatus, Lead, Property, ViewingItem, CallLog, NurtureStep, EmailMessage } from '@/types';
+import { leadStore } from '@/services/leadService';
+import { crmStore } from '@/services/crmService';
+import { propertyStore } from '@/services/propertyService';
+import { webhookService, WebhookLead } from '@/services/webhookService';
+import { BRANDS } from '@/constants';
 import { useNavigate } from 'react-router-dom';
 import {
   X, Plus, Sparkles, Zap, BrainCircuit, Target, BarChart,
@@ -15,7 +15,7 @@ import {
   CheckSquare, Square, ClipboardList, Trash2, AlertTriangle, PhoneCall, History, Play, Quote, UserCheck, TrendingUp, Filter, Download, Inbox, MessageCircle,
   Webhook, ChevronDown, Building2, ShoppingBag, WifiOff
 } from 'lucide-react';
-import { gemini } from '../services/geminiService';
+import { gemini } from '@/services/geminiService';
 
 const COLUMNS = [
   { id: LeadStatus.NEW,         label: 'Ny',           color: 'bg-cyan-500'    },
