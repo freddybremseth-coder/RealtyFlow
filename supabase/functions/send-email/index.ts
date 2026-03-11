@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
   // Resolve API key: header takes precedence over env secret
   const authHeader = req.headers.get('Authorization') ?? '';
   const keyFromHeader = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  const resendKey = keyFromHeader || Deno.env.get('RESEND_API_KEY') ?? '';
+  const resendKey = (keyFromHeader || Deno.env.get('RESEND_API_KEY')) ?? '';
 
   if (!resendKey) {
     return json({
