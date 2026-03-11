@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { propertyStore } from '../services/propertyService';
-import { settingsStore } from '../services/settingsService';
+import { propertyStore } from '@/services/propertyService';
+import { settingsStore } from '@/services/settingsService';
 import {
   Home, Plus, Upload, Search, Check,
   MapPin, BedDouble, Bath, Ruler,
@@ -11,8 +11,8 @@ import {
   Download, Printer, Phone, Mail, Globe, User, Award, Zap, Link, FileText,
   LayoutGrid, Map as MapIcon
 } from 'lucide-react';
-import { Property, Brand, AdvisorProfile } from '../types';
-import PropertyMap from '../components/PropertyMap';
+import { Property, Brand, AdvisorProfile } from '@/types';
+import PropertyMap from '@/components/PropertyMap';
 
 const Inventory: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>(propertyStore.getProperties());
