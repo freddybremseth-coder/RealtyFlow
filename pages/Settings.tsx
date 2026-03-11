@@ -12,6 +12,7 @@ import { settingsStore, ApiKeys } from '../services/settingsService';
 import { Brand, AdvisorProfile, AutomationSettings, IntegrationSettings, AppLanguage } from '../types';
 import { useTranslation } from '../services/i18n';
 import { supabase } from '../services/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 // --- Helpers ---
 const iCls = "w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder:text-slate-600";
@@ -163,6 +164,7 @@ const BrandEditModal: React.FC<{
 const Settings: React.FC = () => {
   const [lang, setLang] = useState(settingsStore.getLanguage());
   const t = useTranslation(lang);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
 
   const [activeTab, setActiveTab] = useState<'brands' | 'profile' | 'integrations' | 'ai' | 'email' | 'system'>('brands');
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -173,12 +175,13 @@ const Settings: React.FC = () => {
   const [profileSaved, setProfileSaved] = useState(false);
   const [apiKeysSaved, setApiKeysSaved] = useState(false);
   const [expertiseInput, setExpertiseInput] = useState('');
+  const [showOpenAIKey, setShowOpenAIKey] = useState(false);
+  const [showAnthropicKey, setShowAnthropicKey] = useState(false);
 
   const advisorFileRef = useRef<HTMLInputElement>(null);
 
   async function fetchBrands() {
     const { data, error } = await supabase.from('brands').select('*');
-    console.log('Fetched brands:', data, 'Error:', error);
     if (error) {
       console.error('Error fetching brands:', error);
       return;
@@ -187,6 +190,11 @@ const Settings: React.FC = () => {
   }
 
   useEffect(() => {
+    const fetchUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+    };
+    fetchUser();
     fetchBrands();
     const unsub = settingsStore.subscribe(() => {
       setProfile(settingsStore.getProfile());
@@ -213,13 +221,20 @@ const Settings: React.FC = () => {
 
   const handleBrandSave = async (updated: Partial<Brand>) => {
     const { id, ...rest } = updated;
+    const userId = user?.id;
+
+    if (!userId) {
+        console.error('User not authenticated, cannot save brand.');
+        return;
+    }
+
+    const dataToSave = id ? rest : { ...rest, user_id: userId };
+
     if (id) {
-      // Update existing brand
-      const { error } = await supabase.from('brands').update(rest).eq('id', id);
+      const { error } = await supabase.from('brands').update(dataToSave).eq('id', id);
       if (error) console.error('Error updating brand:', error);
     } else {
-      // Create new brand
-      const { error } = await supabase.from('brands').insert([rest]);
+      const { error } = await supabase.from('brands').insert([dataToSave]);
       if (error) console.error('Error creating brand:', error);
     }
     setEditingBrand(null);
@@ -374,7 +389,69 @@ const Settings: React.FC = () => {
           ))}
         </div>
       )}
-      {/* ── E-post tab ──────────────────────────────────────────────────────── */}
+
+      {activeTab === 'ai' && (
+        <form onSubmit={handleApiKeysSave} className="space-y-6 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <Key size={14} className="text-cyan-400" /> OpenAI API Nøkkel
+            </h3>
+            <div>
+              <label className={lCls}>API-nøkkel</label>
+              <div className="relative">
+                <input
+                  type={showOpenAIKey ? 'text' : 'password'}
+                  className={iCls + ' pr-10 font-mono'}
+                  placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={apiKeys.openai || ''}
+                  onChange={e => setApiKeys(k => ({ ...k, openai: e.target.value }))}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowOpenAIKey(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-all"
+                >
+                  {showOpenAIKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <Key size={14} className="text-cyan-400" /> Anthropic API Nøkkel
+            </h3>
+            <div>
+              <label className={lCls}>API-nøkkel</label>
+              <div className="relative">
+                <input
+                  type={showAnthropicKey ? 'text' : 'password'}
+                  className={iCls + ' pr-10 font-mono'}
+                  placeholder="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={apiKeys.anthropic || ''}
+                  onChange={e => setApiKeys(k => ({ ...k, anthropic: e.target.value }))}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAnthropicKey(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-all"
+                >
+                  {showAnthropicKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all"
+          >
+            {apiKeysSaved
+              ? <><CheckCircle2 size={14} /> Lagret!</>
+              : <><Save size={14} /> Lagre API-nøkler</>
+            }
+          </button>
+        </form>
+      )}
+
       {activeTab === 'email' && (
         <div className="space-y-6 animate-in fade-in">
 
