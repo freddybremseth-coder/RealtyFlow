@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import ReactMarkdown from 'react-markdown';
 import { Loader2, Zap, Newspaper, Briefcase, Home, TrendingUp } from 'lucide-react';
-import { MarketTheme, Brand, AdvisorProfile } from "../types";
-import { getBrands, getBrand } from "../services/brandService"; 
-import { getProfile } from "../services/profileService";
-import { getMarketPulse } from "../services/aiService";
-import { Badge } from '../components/ui/badge';
+import { MarketTheme, Brand, AdvisorProfile } from "@/types";
+import { getBrands, getBrand } from "@/services/brandService"; 
+import { getProfile } from "@/services/profileService";
+import { getMarketPulse } from "@/services/aiService";
+import { Badge } from '@/components/ui/badge';
 
 const MarketPulse: React.FC = () => {
   const [location, setLocation] = useState('Costa Blanca');
