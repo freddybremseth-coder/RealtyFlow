@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { gemini } from '../services/claudeService';
-import { settingsStore } from '../services/settingsService';
+import { gemini } from '@/services/claudeService';
+import { settingsStore } from '@/services/settingsService';
 import { FileText, Send, BookOpen, Mail, Sparkles, Copy, Check, Download, RefreshCw, Layout, MousePointer2, HardHat } from 'lucide-react';
 
 // Fjerner gjenværende markdown-tegn som AI av og til produserer
@@ -75,12 +75,7 @@ const ContentCMS: React.FC = () => {
                   <button
                     key={b.id}
                     onClick={() => setBrand(b.id)}
-                    className={`w-full p-4 rounded-2xl border text-sm font-bold transition-all flex items-center justify-between ${
-                      brand === b.id
-                        ? 'border-cyan-500/30 text-cyan-400 bg-slate-900 shadow-lg shadow-black'
-                        : 'border-slate-800 text-slate-500 hover:border-slate-700'
-                    }`}
-                  >
+                    className={`w-full p-4 rounded-2xl border text-sm font-bold transition-all flex items-center justify-between ${ brand === b.id ? 'border-cyan-500/30 text-cyan-400 bg-slate-900 shadow-lg shadow-black' : 'border-slate-800 text-slate-500 hover:border-slate-700'}`}>
                     {b.name}
                     {brand === b.id && <div className={`w-2 h-2 rounded-full bg-current shadow-[0_0_8px_currentColor]`} />}
                   </button>
@@ -95,12 +90,7 @@ const ContentCMS: React.FC = () => {
                   <button
                     key={t.id}
                     onClick={() => setContentType(t.id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all ${
-                      contentType === t.id 
-                        ? 'bg-cyan-500 border-cyan-400 text-slate-950' 
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
+                    className={`flex items-center gap-3 p-3 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all ${ contentType === t.id ? 'bg-cyan-500 border-cyan-400 text-slate-950' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
                     {t.icon}
                     {t.label}
                   </button>

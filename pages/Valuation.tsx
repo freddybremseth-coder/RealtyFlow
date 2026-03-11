@@ -7,14 +7,14 @@ import {
   BedDouble, Bath, Car, Sun, Eye, Thermometer, Leaf, BarChart3, Award,
   AlertCircle, Search, RefreshCw, ArrowRight, Clock, Euro
 } from 'lucide-react';
-import { gemini } from '../services/claudeService';
-import { valuationStore } from '../services/valuationService';
-import { settingsStore } from '../services/settingsService';
+import { gemini } from '@/services/claudeService';
+import { valuationStore } from '@/services/valuationService';
+import { settingsStore } from '@/services/settingsService';
 import {
   PropertyValuationData, ValuationResult, SavedValuation,
   PropertyType, PropertyCondition, PropertyOrientation, PropertyView,
   EnergyRating, PoolType, ComparableProperty, Brand, AdvisorProfile
-} from '../types';
+} from '@/types';
 
 // ─── DEFAULTS ─────────────────────────────────────────────────────────────────
 
