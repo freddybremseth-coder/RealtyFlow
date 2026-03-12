@@ -141,20 +141,23 @@ class SettingsService {
 
         this.notify();
     } else {
-        // No settings row exists at all, create one with the default brand.
+        // No settings row exists at all, create one with all default settings.
         this.brand = DEFAULT_BRAND;
+        this.profile = DEFAULT_PROFILE;
+        this.automation = DEFAULT_AUTOMATION;
+        this.apiKeys = DEFAULT_API_KEYS;
         localStorage.setItem('rf_brand', JSON.stringify(this.brand));
         this.saveToCloud({ 
-            profile: DEFAULT_PROFILE, 
-            automation: DEFAULT_AUTOMATION,
-            apiKeys: DEFAULT_API_KEYS,
-            brand: DEFAULT_BRAND 
+            profile: this.profile, 
+            automation: this.automation,
+            api_keys: this.apiKeys, // Use snake_case for the database
+            brand: this.brand 
         }).catch(console.error);
         this.notify();
     }
   }
 
-  async saveToCloud(settings: { profile?: AdvisorProfile, automation?: AutomationSettings, apiKeys?: ApiKeys, brand?: Brand }): Promise<void> {
+  async saveToCloud(settings: { profile?: AdvisorProfile, automation?: AutomationSettings, api_keys?: ApiKeys, brand?: Brand }): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
