@@ -54,9 +54,7 @@ const Login: React.FC = () => {
 
       <div className="w-full max-w-lg animate-in fade-in zoom-in-95 duration-700">
         <div className="text-center mb-10 space-y-4">
-           <div className="w-24 h-24 flex items-center justify-center mx-auto">
-            <img src="/logo_costa_blanca.svg" alt="Costa Blanca HQ Logo" className="w-full h-full object-contain" />
-          </div>
+           <img src="/logo_costa_blanca.svg" alt="Costa Blanca HQ Logo" className="w-24 h-24 mx-auto object-contain" />
           <div>
             <h1 className="text-4xl font-bold tracking-tighter uppercase mb-1" style={{ color: textColor }}>COSTA BLANCA HQ</h1>
             <p className="text-xs font-mono text-gray-500 uppercase tracking-[0.3em]">Executive Access Required</p>
