@@ -98,7 +98,7 @@ class SettingsService {
 
     const { data, error } = await supabase
       .from('user_settings')
-      .select('profile, automation, api_keys, brand')
+      .select('api_keys')
       .eq('user_id', user.id)
       .single();
 
