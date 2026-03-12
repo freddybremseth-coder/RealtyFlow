@@ -17,21 +17,26 @@ const DEFAULT_AUTOMATION: AutomationSettings = {
 
 const DEFAULT_API_KEYS: ApiKeys = {};
 
+// Define a proper default brand for Costa Blanca HQ
 const DEFAULT_BRAND: Brand = {
-    id: 'realtyflow',
-    name: 'RealtyFlow AI',
-    type: 'SaaS',
-    description: 'AI-powered real estate platform',
-    tone: 'Professional',
-    logo: '/logo_realtyflow.png',
-    email: 'post@realtyflow.ai',
-    phone: '+47 123 456 78',
-    website: 'https://realtyflow.ai',
+    id: 'costablanca',
+    name: 'Costa Blanca HQ',
+    type: 'Real Estate',
+    description: 'Leading real estate in Costa Blanca',
+    tone: 'Professional & friendly',
+    logo: '/logo_costa_blanca.png', // Assuming a logo file exists
+    email: 'contact@costablancahq.com',
+    phone: '+34 965 000 000',
+    website: 'https://costablancahq.com',
     visualStyles: {
-        primaryColor: '#0000FF',
-        secondaryColor: '#FFFFFF',
-        fontHeading: 'Arial',
-        fontBody: 'Arial'
+        primaryColor: '#0D9488', // Teal
+        secondaryColor: '#FFFFFF', // White
+        fontHeading: 'Poppins, sans-serif',
+        fontBody: 'Poppins, sans-serif',
+        // Assuming you have a dark theme, let's define background colors
+        backgroundColor: '#111827', // cool-gray-900
+        widgetBackgroundColor: '#1F2937', // cool-gray-800
+        textColor: '#FFFFFF',
     }
 };
 
@@ -107,6 +112,20 @@ class SettingsService {
 
     if (data && data.length > 0) {
         const settings = data[0];
+        let brandUpdated = false;
+        if (settings.brand) {
+            this.brand = { ...DEFAULT_BRAND, ...settings.brand as Brand };
+            localStorage.setItem('rf_brand', JSON.stringify(this.brand));
+            brandUpdated = true;
+        }
+
+        // If no brand was found in the cloud, save the default one.
+        if (!brandUpdated) {
+            this.brand = DEFAULT_BRAND;
+            localStorage.setItem('rf_brand', JSON.stringify(this.brand));
+            this.saveToCloud({ brand: this.brand }).catch(console.error);
+        }
+
         if (settings.profile) {
             this.profile = { ...DEFAULT_PROFILE, ...settings.profile as Partial<AdvisorProfile> };
             localStorage.setItem('rf_profile', JSON.stringify(this.profile));
@@ -119,10 +138,18 @@ class SettingsService {
             this.apiKeys = { ...DEFAULT_API_KEYS, ...settings.api_keys as ApiKeys };
             localStorage.setItem('rf_api_keys', JSON.stringify(this.apiKeys));
         }
-        if (settings.brand) {
-            this.brand = { ...DEFAULT_BRAND, ...settings.brand as Brand };
-            localStorage.setItem('rf_brand', JSON.stringify(this.brand));
-        }
+
+        this.notify();
+    } else {
+        // No settings row exists at all, create one with the default brand.
+        this.brand = DEFAULT_BRAND;
+        localStorage.setItem('rf_brand', JSON.stringify(this.brand));
+        this.saveToCloud({ 
+            profile: DEFAULT_PROFILE, 
+            automation: DEFAULT_AUTOMATION,
+            apiKeys: DEFAULT_API_KEYS,
+            brand: DEFAULT_BRAND 
+        }).catch(console.error);
         this.notify();
     }
   }
@@ -131,12 +158,15 @@ class SettingsService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase
+    const { error } = await supabase
       .from('user_settings')
       .upsert(
         { user_id: user.id, ...settings, updated_at: new Date().toISOString() },
         { onConflict: 'user_id' }
       );
+      if (error) {
+        console.error('Error saving to cloud', error);
+      }
   }
 
   subscribe(listener: () => void): () => void {
