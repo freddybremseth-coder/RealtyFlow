@@ -174,6 +174,9 @@ export interface BrandVisualStyles {
   secondaryColor: string;
   fontHeading: string;
   fontBody: string;
+  backgroundColor?: string;
+  widgetBackgroundColor?: string;
+  textColor?: string;
 }
 
 export interface IntegrationSettings {
