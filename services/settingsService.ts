@@ -78,15 +78,14 @@ class SettingsService {
         .from('user_settings')
         .select('api_keys')
         .eq('user_id', user.id)
-        .single();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
         console.error("Error loading API keys from cloud", error);
         return;
     }
 
-    if (data && data.api_keys) {
-        this.apiKeys = { ...DEFAULT_API_KEYS, ...data.api_keys as ApiKeys };
+    if (data && data.length > 0 && data[0].api_keys) {
+        this.apiKeys = { ...DEFAULT_API_KEYS, ...data[0].api_keys as ApiKeys };
         localStorage.setItem('rf_api_keys', JSON.stringify(this.apiKeys));
         this.notify();
     }
@@ -98,30 +97,30 @@ class SettingsService {
 
     const { data, error } = await supabase
       .from('user_settings')
-      .select('api_keys')
-      .eq('user_id', user.id)
-      .single();
+      .select('profile,automation,api_keys,brand')
+      .eq('user_id', user.id);
 
-    if (error && error.code !== 'PGRST116') { // Ignore 'single row not found'
+    if (error) {
         console.error("Error loading settings from cloud", error);
         return;
     }
 
-    if (data) {
-        if (data.profile) {
-            this.profile = { ...DEFAULT_PROFILE, ...data.profile as Partial<AdvisorProfile> };
+    if (data && data.length > 0) {
+        const settings = data[0];
+        if (settings.profile) {
+            this.profile = { ...DEFAULT_PROFILE, ...settings.profile as Partial<AdvisorProfile> };
             localStorage.setItem('rf_profile', JSON.stringify(this.profile));
         }
-        if (data.automation) {
-            this.automation = { ...DEFAULT_AUTOMATION, ...data.automation as Partial<AutomationSettings> };
+        if (settings.automation) {
+            this.automation = { ...DEFAULT_AUTOMATION, ...settings.automation as Partial<AutomationSettings> };
             localStorage.setItem('rf_automation', JSON.stringify(this.automation));
         }
-        if (data.api_keys) {
-            this.apiKeys = { ...DEFAULT_API_KEYS, ...data.api_keys as ApiKeys };
+        if (settings.api_keys) {
+            this.apiKeys = { ...DEFAULT_API_KEYS, ...settings.api_keys as ApiKeys };
             localStorage.setItem('rf_api_keys', JSON.stringify(this.apiKeys));
         }
-        if (data.brand) {
-            this.brand = { ...DEFAULT_BRAND, ...data.brand as Brand };
+        if (settings.brand) {
+            this.brand = { ...DEFAULT_BRAND, ...settings.brand as Brand };
             localStorage.setItem('rf_brand', JSON.stringify(this.brand));
         }
         this.notify();
