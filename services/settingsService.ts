@@ -24,7 +24,7 @@ const DEFAULT_BRAND: Brand = {
     type: 'Real Estate',
     description: 'Leading real estate in Costa Blanca',
     tone: 'Professional & friendly',
-    logo: '/logo_costa_blanca.png', // Assuming a logo file exists
+    logo: '/logo_costa_blanca.svg', // Use the new SVG logo
     email: 'contact@costablancahq.com',
     phone: '+34 965 000 000',
     website: 'https://costablancahq.com',
@@ -33,7 +33,6 @@ const DEFAULT_BRAND: Brand = {
         secondaryColor: '#FFFFFF', // White
         fontHeading: 'Poppins, sans-serif',
         fontBody: 'Poppins, sans-serif',
-        // Assuming you have a dark theme, let's define background colors
         backgroundColor: '#111827', // cool-gray-900
         widgetBackgroundColor: '#1F2937', // cool-gray-800
         textColor: '#FFFFFF',
@@ -57,7 +56,6 @@ class SettingsService {
   getLanguage(): AppLanguage { return this.automation.language || AppLanguage.NO; }
   getApiKeys(): ApiKeys { return this.apiKeys; }
   getBrand(brandId: string): Brand | undefined {
-    // In a real app, you might fetch this from a list of brands
     return this.brand.id === brandId ? this.brand : undefined;
   }
 
@@ -113,13 +111,10 @@ class SettingsService {
     if (data && data.length > 0) {
         const settings = data[0];
 
-        // --- REPAIR SCRIPT ---
-        // Force the brand to the correct default to overwrite any bad data.
+        // Set brand to default to ensure consistency
         this.brand = DEFAULT_BRAND; 
         localStorage.setItem('rf_brand', JSON.stringify(this.brand));
-        // Also save it back to the cloud to fix it for good.
         this.saveToCloud({ brand: this.brand }).catch(console.error);
-        // --- END REPAIR SCRIPT ---
 
         if (settings.profile) {
             this.profile = { ...DEFAULT_PROFILE, ...settings.profile as Partial<AdvisorProfile> };
@@ -135,7 +130,6 @@ class SettingsService {
         }
         this.notify();
     } else {
-        // No settings row exists, so create one with the correct brand.
         this.brand = DEFAULT_BRAND;
         this.profile = DEFAULT_PROFILE;
         this.automation = DEFAULT_AUTOMATION;
@@ -144,7 +138,7 @@ class SettingsService {
         this.saveToCloud({ 
             profile: this.profile, 
             automation: this.automation,
-            api_keys: this.apiKeys, // Use snake_case for the database
+            api_keys: this.apiKeys,
             brand: this.brand 
         }).catch(console.error);
         this.notify();
