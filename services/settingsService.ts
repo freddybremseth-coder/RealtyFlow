@@ -112,19 +112,14 @@ class SettingsService {
 
     if (data && data.length > 0) {
         const settings = data[0];
-        let brandUpdated = false;
-        if (settings.brand) {
-            this.brand = { ...DEFAULT_BRAND, ...settings.brand as Brand };
-            localStorage.setItem('rf_brand', JSON.stringify(this.brand));
-            brandUpdated = true;
-        }
 
-        // If no brand was found in the cloud, save the default one.
-        if (!brandUpdated) {
-            this.brand = DEFAULT_BRAND;
-            localStorage.setItem('rf_brand', JSON.stringify(this.brand));
-            this.saveToCloud({ brand: this.brand }).catch(console.error);
-        }
+        // --- REPAIR SCRIPT ---
+        // Force the brand to the correct default to overwrite any bad data.
+        this.brand = DEFAULT_BRAND; 
+        localStorage.setItem('rf_brand', JSON.stringify(this.brand));
+        // Also save it back to the cloud to fix it for good.
+        this.saveToCloud({ brand: this.brand }).catch(console.error);
+        // --- END REPAIR SCRIPT ---
 
         if (settings.profile) {
             this.profile = { ...DEFAULT_PROFILE, ...settings.profile as Partial<AdvisorProfile> };
@@ -138,10 +133,9 @@ class SettingsService {
             this.apiKeys = { ...DEFAULT_API_KEYS, ...settings.api_keys as ApiKeys };
             localStorage.setItem('rf_api_keys', JSON.stringify(this.apiKeys));
         }
-
         this.notify();
     } else {
-        // No settings row exists at all, create one with all default settings.
+        // No settings row exists, so create one with the correct brand.
         this.brand = DEFAULT_BRAND;
         this.profile = DEFAULT_PROFILE;
         this.automation = DEFAULT_AUTOMATION;
