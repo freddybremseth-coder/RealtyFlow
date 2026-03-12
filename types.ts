@@ -8,6 +8,11 @@ export enum AppLanguage {
   FR = 'fr'
 }
 
+export interface ApiKeys {
+  gemini?: string;
+  resend?: string;
+}
+
 export enum LeadStatus {
   NEW = 'NEW',
   CONTACT = 'CONTACT',
