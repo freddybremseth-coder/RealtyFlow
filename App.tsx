@@ -33,7 +33,7 @@ const App: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setIsAuthenticated(true);
-        settingsStore.loadApiKeysFromCloud().catch(console.error);
+        settingsStore.loadFromCloud().catch(console.error);
       } else {
         setIsAuthenticated(false);
       }
@@ -45,7 +45,7 @@ const App: React.FC = () => {
       const auth = !!session;
       setIsAuthenticated(auth);
       if (auth) {
-        settingsStore.loadApiKeysFromCloud().catch(console.error);
+        settingsStore.loadFromCloud().catch(console.error);
       } 
     });
 
