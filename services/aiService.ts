@@ -4,7 +4,7 @@ import { MarketTheme, Brand, AdvisorProfile } from "../types";
 import { settingsStore } from "./settingsService";
 
 const getGenAI = () => {
-  const apiKey = settingsStore.getApiKey('gemini');
+  const apiKey = settingsStore.getApiKeys().gemini;
   if (!apiKey) throw new Error("Mangler Gemini API-nøkkel. Gå til Innstillinger → AI-nøkler.");
   return new GoogleGenerativeAI(apiKey);
 };

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { generateMarketingImage } from '@/services/aiService'; // Oppdatert import
+import { generateMarketingImage } from '@/services/aiService';
 import { Sparkles, Download, RefreshCcw, Image as ImageIcon, Wand2, Maximize2 } from 'lucide-react';
 
 const ImageStudio: React.FC = () => {

@@ -88,7 +88,7 @@ const Dashboard: React.FC = () => {
         lastActivity: 'Lagt til fra dashbord',
         summary: extractedData?.summary || newLead.notes || 'Manuell inntasting.',
         personalityType: extractedData?.personalityType || 'Ubekreftet',
-        imageUrl: extractedData?.imageUrl || null,
+        imageUrl: extractedData?.imageUrl || undefined,
         requirements: { 
           budget: valueInEur, 
           location: extractedData?.location || 'Ikke spesifisert',
