@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -7,8 +6,8 @@ import { authStore } from './services/authService';
 import { settingsStore } from './services/settingsService';
 import { supabase } from './services/supabase';
 
-// Lazy load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const WorkspaceHub = lazy(() => import('./pages/WorkspaceHub'));
 const Pipeline = lazy(() => import('./pages/Pipeline'));
 const ImageStudio = lazy(() => import('./pages/ImageStudio'));
 const ContentCMS = lazy(() => import('./pages/ContentCMS'));
@@ -44,54 +43,59 @@ const App: React.FC = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const auth = !!session;
       setIsAuthenticated(auth);
-      if (auth) {
-        settingsStore.loadFromCloud().catch(console.error);
-      } 
+      if (auth) settingsStore.loadFromCloud().catch(console.error);
     });
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => authListener.subscription.unsubscribe();
   }, []);
 
   return (
     <HashRouter>
       <Routes>
-        <Route path="/login" element={
-          <Suspense fallback={<div>Loading...</div>}>
-            {isAuthenticated ? <Navigate to="/" replace /> : <Login />}
-          </Suspense>
-        } />
+        <Route
+          path="/login"
+          element={
+            <Suspense fallback={<div>Loading...</div>}>
+              {isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+            </Suspense>
+          }
+        />
 
-        <Route path="/*" element={
-          isAuthenticated ? (
-            <Layout>
-              <Suspense fallback={<div className='flex-grow flex items-center justify-center'><div className='text-xl'>Loading...</div></div>}>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/pipeline" element={<Pipeline />} />
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/tomtebase" element={<Tomtebase />} />
-                  <Route path="/valuation" element={<Valuation />} />
-                  <Route path="/growth" element={<GrowthHub />} />
-                  <Route path="/studio" element={<ImageStudio />} />
-                  <Route path="/content" element={<ContentCMS />} />
-                  <Route path="/assistant" element={<div className="w-full py-4 lg:py-8"><LiveAssistant /></div>} />
-                  <Route path="/scanner" element={<ScannerPage />} />
-                  <Route path="/crm" element={<CRM />} />
-                  <Route path="/calendar" element={<Calendar />} />
-                  <Route path="/marketing-tasks" element={<MarketingTasks />} />
-                  <Route path="/business" element={<BusinessOverview />} />
-                  <Route path="/hub" element={<BusinessHub />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </Layout>
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } />
+        <Route
+          path="/*"
+          element={
+            isAuthenticated ? (
+              <Layout>
+                <Suspense fallback={<div className="flex-grow flex items-center justify-center"><div className="text-xl">Loading...</div></div>}>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/workspace/:workspaceId" element={<WorkspaceHub />} />
+
+                    {/* Existing module routes stay stable during migration. */}
+                    <Route path="/pipeline" element={<Pipeline />} />
+                    <Route path="/inventory" element={<Inventory />} />
+                    <Route path="/tomtebase" element={<Tomtebase />} />
+                    <Route path="/valuation" element={<Valuation />} />
+                    <Route path="/growth" element={<GrowthHub />} />
+                    <Route path="/studio" element={<ImageStudio />} />
+                    <Route path="/content" element={<ContentCMS />} />
+                    <Route path="/assistant" element={<div className="w-full py-4 lg:py-8"><LiveAssistant /></div>} />
+                    <Route path="/scanner" element={<ScannerPage />} />
+                    <Route path="/crm" element={<CRM />} />
+                    <Route path="/calendar" element={<Calendar />} />
+                    <Route path="/marketing-tasks" element={<MarketingTasks />} />
+                    <Route path="/business" element={<BusinessOverview />} />
+                    <Route path="/hub" element={<BusinessHub />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+              </Layout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
       </Routes>
     </HashRouter>
   );
