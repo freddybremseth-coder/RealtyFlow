@@ -109,3 +109,18 @@
     white-space: nowrap;
   }
 }
+
+
+/*
+ * Hard safety rail:
+ * Tailwind's break-all / break-words utilities must never split human-facing
+ * names by accident. Technical strings can explicitly opt in with
+ * .rf-text-breakable.
+ *
+ * This block is intentionally unlayered so it wins over Tailwind utilities.
+ */
+:where(.break-all, .break-words, .hyphens-auto):not(.rf-text-breakable) {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
