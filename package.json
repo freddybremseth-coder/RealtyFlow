@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "npx vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "node scripts/check-ui-text-wrapping.mjs && vite build",
+    "preview": "vite preview",
+    "check:ui-text": "node scripts/check-ui-text-wrapping.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
