@@ -1,3 +1,111 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * RealtyFlow text-wrapping guard
+ *
+ * Human-facing names, labels and headings must never be broken inside words.
+ * This protects person names, place names, property/project names, channels,
+ * tabs, chips and short UI labels across the application.
+ *
+ * Long machine values (URLs, tokens, IDs, raw paths) can opt in to breaking
+ * with .rf-text-breakable.
+ */
+@layer base {
+  :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    button,
+    label,
+    legend,
+    summary,
+    th,
+    [role="tab"],
+    [role="button"],
+    [role="menuitem"],
+    [role="option"]
+  ) {
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  /*
+   * Use for human-facing names/titles that may wrap onto multiple lines,
+   * but only between complete words.
+   */
+  .rf-text-protected {
+    word-break: keep-all;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+
+  /*
+   * Use for short names and compact UI controls where wrapping is undesirable:
+   * channel names, tabs, badges, chips, locations and short entity labels.
+   */
+  .rf-text-nowrap {
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+
+  /*
+   * Use only for machine-like values that genuinely need emergency wrapping:
+   * URLs, long IDs, tokens and file paths.
+   */
+  .rf-text-breakable {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /*
+   * Common semantic/utility patterns used throughout RealtyFlow. These act as
+   * a safety net even when a component does not explicitly use rf-text-*.
+   */
+  :where(
+    .badge,
+    .chip,
+    .pill,
+    .tag,
+    .tab,
+    .tabs-trigger,
+    .channel-name,
+    .platform-name,
+    .location-name,
+    .property-name,
+    .project-name,
+    .customer-name,
+    .company-name,
+    .entity-name
+  ) {
+    word-break: keep-all;
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+
+  :where(
+    .badge,
+    .chip,
+    .pill,
+    .tag,
+    .tab,
+    .tabs-trigger,
+    .channel-name,
+    .platform-name
+  ) {
+    white-space: nowrap;
+  }
+}
